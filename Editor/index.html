@@ -1,0 +1,439 @@
+<style>
+    body{
+        padding:0;
+        margin:0;
+        /*overflow:hidden;*/
+        font-family:monospace;
+        height:100vh;
+        width:100vw;
+    }
+    .shade{
+		box-shadow: 0 0 5px black inset;
+	}
+    .tab-bar{
+        height:25px;
+    }
+    .tab-container{
+        flex-grow:1;
+        flex-direction:row;
+    }
+    .tab-contents{
+        display:flex;
+        height:100%;
+        width:100%;
+    }
+    .tab-menu{
+        display:flex;
+        flex-direction:column;
+        height:100%;
+    }
+    .side-pannel{
+        width:25%;
+        padding: 10px;
+    }
+    .layout-outer{
+        flex-grow:1;
+    }
+    .model-view{
+        flex-grow: 1;
+    }
+    .texture-list{
+        width: 100%;
+        height: 50%;
+    }
+    .model-list{
+        width: 100%;
+        height: 25%;
+    }
+    .animation-list{
+        width: 100%;
+        height: 25%;
+    }
+    canvas{
+        background-color: black;
+        image-rendering:pixelated;
+        height: 100%;
+    }
+    .shader-selection{
+        display: flex;
+    }
+    .shader-selection > button{
+        flex-grow: 1;
+    }
+    .hint{
+        color: grey;
+        display:inline;
+    }
+    .import-zone{
+        position: absolute;
+        background-color: rgba(255, 255, 255, 0.514);
+        width: 100vw;
+        height: 100vh;
+        z-index: 999;
+        text-align: center;
+    }
+    .center{
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    .texture-editor-image-view{
+        flex-grow: 1;
+    }
+     .label{
+         font-weight:bold;
+     }
+    key{
+        border:1px solid black;
+        box-shadow: 0 3px 0 black;
+        padding:3px;
+    }
+    table.shortcuts{
+        border-spacing:10px;
+    }
+    button.animation-new{
+        width: 100%;
+    }
+    .list-button{
+        width: 100%;
+    }
+    .tab-button{
+        height: 100%;
+    }
+    table.variables th{
+        border: 1px solid black;
+    }
+    .xyz{
+        display: flex;
+    }
+    .xyz > button{
+        flex-grow: 1;
+    }
+    .layout-div{
+        flex-grow: 1;
+    }
+    .layout-list{
+        width: 100%;
+        height: 50%;
+    }
+    .layout-add-list{
+        width: 100%;
+        height: 0;
+        overflow: hidden;
+        transition: 0.2s height;
+    }
+    .add-component-button{
+        width: 100%;
+    }
+</style>
+<body>
+    <div class="shade import-zone" onclick="closeImport()" id="import-zone">
+        <div class="center">
+            Drag Files In to import.<br>
+            (Click to cancel)
+        </div>
+        <input type="file" id="import-file-input" style="display: none;" />
+    </div>
+
+    <div class="tab-menu">
+        <tab>
+            <tabTitle>Layout</tabTitle>
+            <tabContent>
+                <div class="side-pannel shade">
+                    <div id="layout-component-list" class="layout-list shade">
+                    </div>
+                    <button style="width: 100%;" id="layout-add-button">ADD</button>
+                    <div id="layout-add-list" class="layout-add-list shade"></div>
+                    <hr>
+                    <div>
+                        <div class="label">Show Extras:<input type="checkbox" id="extras-checkbox" checked></div>
+                    </div> 
+                </div>
+                <div id="layout-div" class="layout-div">      
+                </div>
+                <div class="side-pannel shade">
+                    <div class="shade">
+                        <div class="label">Layout:</div>
+                        <table style="width: 100%;">
+                            <tr>
+                                <th><input id="layout-grid-width" style="width: 100%;" step=1 type="number" min="1"></th>
+                                <th>X</th>
+                                <th><input id="layout-grid-height" style="width: 100%;" step=1 type="number" min="1"></th>
+                            </tr>
+                        </table>
+                    </div>               
+                    <hr>   
+                    <div id="component-attributes">
+                    </div>
+                </div>
+            </tabContent>
+        </tab>  
+        
+        <tab>
+            <tabTitle>Models</tabTitle>
+            <tabContent>
+                    <div id="model-view" class="model-view"></div>
+                    <div class="side-pannel shade">
+                        <button onclick="openImport()">Import</button>
+                        <div class="model-list shade" id="model-list"></div>
+                        <hr>
+                        <div class="shader-selection">
+                            <button onclick="MV.changeModelViewShader('normals')">Normals</button>
+                            <button onclick="MV.changeModelViewShader('uvs')">UVs</button>
+                            <button onclick="MV.changeModelViewShader('texture')">Texture</button>
+                            <button onclick="MV.changeModelViewShader('lit')">Lit</button>
+                        </div>
+                        <hr>
+                        <div class="label">rotate 90 degrees:</div>
+                        <div class="xyz">
+                            <button onclick="MV.rotX()">X</button>
+                            <button onclick="MV.rotY()">Y</button>
+                            <button onclick="MV.rotZ()">Z</button>
+                        </div>
+                        <hr>
+                        <div class="label">mirror:</div>
+                        <div class="xyz">
+                            <button onclick="MV.mirX()">X</button>
+                            <button onclick="MV.mirY()">Y</button>
+                            <button onclick="MV.mirZ()">Z</button>
+                        </div>
+                        <hr>
+                        <button onclick="MV.scaleModel()">Resize</button><br>
+                        <button onclick="MV.scaleModelUnit()">Resize to unit</button><br>
+                        <button onclick="MV.originToCenter()">Origin to center</button><br>
+                        <button onclick="MV.flipTris()">flip faces</button>
+                    </div>
+
+            </tabContent>
+        </tab>
+        <tab>
+            <tabTitle>Textures</tabTitle>
+            <tabContent>
+                    <div class="texture-editor-image-view">
+                        <canvas id="texture-canvas" width="1" height="1"></canvas>
+                    </div>
+                    <div class="side-pannel shade">
+                        <button onclick="openImport()">Import</button>
+                        <div class="shade texture-list" id="texture-list">
+                        </div>
+                        <button id="base64-encode-button" onclick="TE.getBase64()">Encode Base64 String</button>
+                        <code id="image-base64-output"></code>
+                    </div>
+            </tabContent>
+        </tab>
+        <tab>
+            <tabTitle>Animations</tabTitle>
+            <tabContent>
+                <div style="flex-grow: 1;">
+                    <div id="animation-canvas-div"></div>
+                </div>
+                <div class="side-pannel shade">
+                    <div>
+                        <div class="label">Preview:</div> 
+                        <input type="range" id="animation-preview-slider" style="width: 100%;" min="0" max="1" step="any">
+                        <hr>
+                        <div class="label">Animations:</div>
+                        <button onclick="AE.addAnimation()" class="animation-new">New</button> 
+                        <div id="animation-list" class="shade animation-list"></div>
+                        <hr>
+                        <div class="label">Models:</div>
+                        <button onclick="AE.addModel()" class="animation-new">New</button> 
+                        <div id="animation-model-list" class="shade animation-list"></div>
+                        <hr>
+                        <div id="animation-model-settings" class="shade" style="width: 100%;"></div>
+                    </div>
+                </div>
+            </tabContent>
+        </tab>
+        
+        <tab>
+            <tabTitle>DSP</tabTitle>
+            <tabContent></tabContent>
+        </tab>
+
+        <tab>
+            <tabTitle>File</tabTitle>
+            <tabContent>
+                <div>
+                    <div><button onclick="saveProject()">Save <div class="hint">(ctrl + s)</div></button></div>
+                    <div><button onclick="openImport()">Load</button></div>
+                    <div>
+                        <div class="label">Shortcuts:</div>
+                        <table class="shortcuts">
+                            <tr>
+                                <th><key>ctrl</key>+<key>S</key></th>
+                                <th> save project to .plk</th>
+                            </tr>
+                            <tr>
+                                <th><key>ctrl</key>+<key>D</key></th>
+                                <th> open import menu</th>
+                            </tr>
+                                                     <tr>
+                                <th><key>&#x1F845;/&#x1F847;/&#x1F844;/&#x1F846;</key></th>
+                                <th>rotate camera in 3D view while hovering cursor (hold <key>ctrl</key> to rotate faster)</th>
+                            </tr>
+                            <tr>
+                                <th><key>&#x1F845;/&#x1F847; + shift</key></th>
+                                <th>zoom 3D view while hovering cursor (hold <key>ctrl</key> to zoom faster)</th>
+                            </tr>
+                        </table>
+                    </div>
+                    <div>
+                        <div class="label">Math:</div>
+                        <table class="shortcuts">
+                            <tr>
+                                <th>functions:</th>
+                                <th>min,max,clamp,sin,cos,tan,abs,pow,lerp</th>
+                            </tr>
+                            <tr>
+                                <th>constants:</th>
+                                <th>pi,e</th>
+                            </tr>
+                        </table>
+                    </div>
+                    <div>
+                        <div class="label">Variables:</div>
+                        <table class="variables">
+                            <tr>
+                                <th>x</th>
+                                <th>value of the current input from 0-1</th>
+                            </tr>
+                            <tr>
+                                <th>n</th>
+                                <th>instance number of the input</th>
+                            </tr>
+                            <tr>
+                                <th>c</th>
+                                <th>instance count of the mesh</th>
+                            </tr>
+                            <tr>
+                                <th>nc</th>
+                                <th>instance number/instance count. will never be 1 but ranges from 0-1</th>
+                            </tr>
+                            <tr>
+                                <th>nm</th>
+                                <th>instance number/max instance number. ranges from 0-1</th>
+                            </tr>
+                            <tr>
+                                <th>t</th><th>current time in seconds</th>
+                            </tr> 
+                        </table>
+                    </div>
+                </div>  
+            </tabContent>
+        </tab>
+    </div>
+</body>
+<script>
+    function highlightButtonInList(btn){
+        for(v of btn.parentElement.children){v.style=null}            
+        btn.style.background='black';
+        btn.style.color='white'
+    }
+    //tab menu script
+    const tabMenus=document.getElementsByClassName('tab-menu');
+    for(v of tabMenus){
+        const bar=document.createElement('div');
+        bar.classList.add('tab-bar');
+        bar.classList.add('shade');
+        const container=document.createElement('div');
+        container.classList.add('tab-container');
+        container.classList.add('shade');
+        
+        const tabs=[];
+        //do all the tabs
+        for(b of v.children){
+            if(b.localName=="tab"){
+                const tab={name:"",content:""};
+                tabs.push(tab);
+                
+                for(n of b.children){
+                    if(n.localName=="tabtitle"){
+                        tab.name=n.innerHTML;
+                    }
+                    if(n.localName=="tabcontent"){
+                        tab.content=n.innerHTML;
+                    }
+                }
+            }
+        }
+        while(v.children.length>0){v.children[0].remove()}
+        //now create the tabs
+        for(b of tabs){
+            const button=document.createElement('button');
+            button.textContent=b.name;
+            bar.appendChild(button);
+            const contentContainer=document.createElement('div');
+            contentContainer.classList.add('tab-contents')
+            contentContainer.innerHTML=b.content;
+            contentContainer.style.size="100%";
+            container.appendChild(contentContainer);
+            button.container=contentContainer;
+            button.tabMenuContainer=container;
+            button.classList.add('tab-button')
+            button.onclick = function(){
+                for(v of this.tabMenuContainer.children){
+                    v.style.display='none';
+                }
+                this.container.style.display=null;
+                highlightButtonInList(this);
+            }
+        }
+        setTimeout(function(){bar.children[0].onclick()},0);
+        v.appendChild(bar);
+        v.appendChild(container);
+    }
+</script>
+<script src="jszip.js"></script>
+<script src="saveAtt3.js"></script>
+<script>
+    document.addEventListener('keydown', function(event) {
+        if (event.ctrlKey && event.key === 's') {
+            event.preventDefault();
+            saveProject();
+        }
+        if (event.ctrlKey && event.key === 'd') {
+            event.preventDefault();
+            openImport();
+        }
+    });
+    function saveProject() {
+        Save.saveProject(project);
+    }
+    function loadProject(file){
+        Save.loadProject(file);
+    }
+    function resetAll(){
+        MV.reset();
+        TE.reset();
+    }
+    
+    function download(bytes, fname)  {
+      let blob = new Blob([bytes], {type:"application/octet-stream"});
+      let link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = fname;
+      link.click();
+    }
+class Main{
+    static SCREEN_HEIGHT=2**9;
+}
+</script>
+<script>
+    const project={};
+    project.models=[];
+    project.textures=[];
+    project.animations=[];
+    project.name='A';
+    project.description='';
+    project.tags=[];
+    project.layout={};
+</script>
+<script src="dataTypes.js"></script>
+<script src="newRenderer.js"></script>
+
+<script src="modelViewer.js"></script>
+<script src="textureEditor.js"></script>
+<script src="animationEditor.js"></script>
+<script src="layoutEditor.js"></script>
