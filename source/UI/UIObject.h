@@ -23,9 +23,11 @@ class UIObject{
         void draw(Renderer& renderer);
         Vec4 getBoundingRect(Renderer &renderer);
         void setText(Renderer &renderer, std::string textString);
+        std::function<void()> onClick;
 
         bool isHovered = false;
-        
+        bool isVisible = false;
+
         UIObjectStyle style=UIObjectStyle();
 
         bool enableHoverAndClick=false;

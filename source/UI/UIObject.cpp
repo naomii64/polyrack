@@ -4,7 +4,8 @@
 UIObject::UIObject(){}
 UIObject::~UIObject(){}
 void UIObject::draw(Renderer& renderer){
-    //the boxes size thing nowwwwwwAAAHH
+    if(!isVisible){return;}
+
     Vec4 rectangle = getBoundingRect(renderer);
 
     Vec2 finalPos=rectangle.xy();

@@ -71,8 +71,21 @@ void AudioPluginAudioProcessorEditor::resized()
 {
     mainRenderer.setSize(getWidth(),getHeight());
 }
+
+
+//========INPUT========//
 void AudioPluginAudioProcessorEditor::mouseMove(const juce::MouseEvent& event)
 {
     Vec2 position = Vec2(event.position.x,event.position.y);
     UIManager::updateMousePos(mainRenderer,position);
+}
+void AudioPluginAudioProcessorEditor::mouseDown(const juce::MouseEvent& event) {
+    if (event.mods.isRightButtonDown()) {
+        // Right mouse button was clicked
+        UIManager::showGroup(UIManager::moduleSelectionGroup);
+    }
+    if (event.mods.isLeftButtonDown()) {
+        // Right mouse button was clicked
+        UIManager::click(event);
+    }
 }

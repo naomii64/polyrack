@@ -3,12 +3,18 @@
 
 UIMenu UIManager::mainUI;
 UIObject* UIManager::hoveredObject=nullptr;
+int UIManager::currentUIGroup=0;
+std::vector<std::vector<UIObject*>> UIManager::groups;
+int UIManager::moduleSelectionGroup=0;
 
 void UIManager::init(Renderer& renderer){
     std::cout << "initializing ui..." <<    std::endl;
+    moduleSelectionGroup = newUIGroupID();
+
     //add a test button to module selection menu
     UIObject& test = mainUI.addObject();
-    
+    assignGroup(test,moduleSelectionGroup);
+
     //100 pixels
     const int padding=25;
     const int moduleButtonHeight=100;
@@ -25,6 +31,8 @@ void UIManager::init(Renderer& renderer){
     int i = 0;
     for(ModuleData& moduleData : ModuleManager::modules){
         UIObject& moduleButton = mainUI.addObject();
+        assignGroup(moduleButton,moduleSelectionGroup);
+        
         moduleButton.enableHoverAndClick=true;    
 
         moduleButton.width.percentage=1.0f;
@@ -36,6 +44,10 @@ void UIManager::init(Renderer& renderer){
         moduleButton.style.hovered.backgroundColor=Vec4(0.5f,0.5f,0.5f,1.0f);
         //increment i to keep track of the current module
         moduleButton.setText(renderer,moduleData.name);
+
+        moduleButton.onClick = [moduleData] {
+            std::cout << moduleData.name << std::endl;
+        };
 
         i++;
     }
@@ -61,4 +73,35 @@ void UIManager::updateMousePos(Renderer& renderer,Vec2 position){
     }
     if(hoveredObject==nullptr){return;}
     hoveredObject->isHovered=true;
+}
+int UIManager::newUIGroupID(){
+    return currentUIGroup++;
+}
+void UIManager::assignGroup(UIObject& obj, int groupID){
+    if (groups.size() <= groupID) {
+        groups.resize(groupID + 1); // Ensure index is valid
+    }
+    groups[groupID].push_back(&obj);
+}
+void UIManager::hideGroup(int groupID){
+    if (groupID < 0 || groupID >= groups.size()) {
+        return; // Group doesn't exist
+    }
+    for(UIObject* obj : groups[groupID]){
+        obj->isVisible=false;
+    }
+}
+void UIManager::showGroup(int groupID){
+    if (groupID < 0 || groupID >= groups.size()) {
+        return; // Group doesn't exist
+    }
+    for(UIObject* obj : groups[groupID]){
+        obj->isVisible=true;
+    }
+}
+void UIManager::click(const juce::MouseEvent& event){
+    if(hoveredObject==nullptr){return;}
+    if (hoveredObject->onClick) {
+        hoveredObject->onClick();
+    }
 }

@@ -17,6 +17,7 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
     void mouseMove(const juce::MouseEvent& event) override;
+    void mouseDown(const juce::MouseEvent& event) override;
 
     TextureManager textureAtlas;
 
