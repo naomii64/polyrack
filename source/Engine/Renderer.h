@@ -6,7 +6,7 @@
 //engine files
 #include "Includes/Model.h"
 #include "Includes/DataTypes.h"
-#include "EngineAssets.h"
+#include "TextureManager.h"
 //ui
 #include "../UI/UIManager.h"
 

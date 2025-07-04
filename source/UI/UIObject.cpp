@@ -1,5 +1,6 @@
 #pragma once
 #include "UIObject.h"
+#include "../Engine/EngineAssets.h"
 
 UIObject::UIObject(){}
 UIObject::~UIObject(){}
@@ -22,7 +23,7 @@ void UIObject::draw(Renderer& renderer){
         finalPos.x,finalPos.y,finalWidth.x,finalWidth.y,
         15.0f,
         1.0f/3.0f,
-        EngineAssets::borderTextureID,
+        EngineAssets::tBorder,
         currentStyle.backgroundColor
     );
     
@@ -39,7 +40,7 @@ void UIObject::draw(Renderer& renderer){
         Vec2 textPosition = finalPos+Vec2(textInsetAmount)+Vec2(0.0f,fontSize);
         Vec3 textPosv3(textPosition.x,textPosition.y,0.0f);
 
-        renderer.drawModelAt(textModel,textPosv3,textRotation,textScale,EngineAssets::fontTextureID);
+        renderer.drawModelAt(textModel,textPosv3,textRotation,textScale,EngineAssets::tFont);
     }    
 }
 Vec4 UIObject::getBoundingRect(Renderer& renderer){

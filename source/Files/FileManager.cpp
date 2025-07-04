@@ -52,7 +52,7 @@ void FileManager::init() {
     std::cout << "Module folder: " << moduleFolder.getFullPathName() << std::endl;
     std::cout << "Assets folder: " << assetFolder.getFullPathName() << std::endl;
 }
-void FileManager::loadModules(TextureManager& textureAtlas) {
+void FileManager::loadModules(Renderer& renderer,TextureManager& textureAtlas) {
    
     //loop through all the modules
     for (auto& file : moduleFolder.findChildFiles(juce::File::findFiles, false))
@@ -77,11 +77,13 @@ void FileManager::loadModules(TextureManager& textureAtlas) {
             juce::String moduleFilePath=file.getFullPathName();
             juce::String moduleName=parsed.getProperty("name",  "[MISSING]");
             juce::String moduleDesc=parsed.getProperty("description",  "[MISSING]");
+            juce::var moduleLayout = parsed["layout"].getObject();
             //arrays
             juce::Array<juce::var>* moduleTags = parsed["tags"].getArray();
             juce::Array<juce::var>* moduleTextures = parsed["textures"].getArray();
             juce::Array<juce::var>* moduleModels = parsed["models"].getArray();
-            
+            juce::Array<juce::var>* layoutComponents = moduleLayout["components"].getArray();
+
             #if DEBUG_MODULE_FILES
             std::cout << "registering module " << fileName << ":" << std::endl;
             std::cout <<"\tPath:\t" <<  moduleFilePath  << std::endl;
@@ -101,13 +103,15 @@ void FileManager::loadModules(TextureManager& textureAtlas) {
             #if DEBUG_MODULE_FILES
             std::cout <<"\tTextures:\t" <<  std::endl;
             #endif
+
+            std::vector<int> textureIDs;
             //loop through the textures and initialize them idfk
             for (const juce::var& texture : *moduleTextures){
                 juce::String texturePath = texture.getProperty("path", "[MISSING]");
                 const juce::ZipFile::ZipEntry* textureEntry = zipFile.getEntry(texturePath);
                 std::unique_ptr<juce::InputStream> stream(zipFile.createStreamForEntry(*textureEntry));
                 juce::Image textureImage = FileManager::readTextureStream(std::move(stream));
-                textureAtlas.addTexture(textureImage);
+                textureIDs.emplace_back(textureAtlas.addTexture(textureImage));
 
                 #if DEBUG_MODULE_FILES
                 std::cout <<"\t\tTexture:" <<  std::endl;
@@ -121,13 +125,33 @@ void FileManager::loadModules(TextureManager& textureAtlas) {
             //loop through the models tooooooo
             for (const juce::var& model : *moduleModels){
                 juce::String modelPath = model.getProperty("path", "[MISSING]");
-                
+                int textureIndex = static_cast<int>(model.getProperty("textureID", 0));
+                int modelTextureID = textureIDs[textureIndex];
+
+                const juce::ZipFile::ZipEntry* modelEntry = zipFile.getEntry(modelPath);
+                if (modelEntry != nullptr)
+                {
+                    std::unique_ptr<juce::InputStream> inputStream(zipFile.createStreamForEntry(*modelEntry));
+                    
+                    if (inputStream != nullptr)
+                    {
+                        juce::String fileContents = inputStream->readEntireStreamAsString();
+                        Model& model = moduleData.models.emplace_back();
+                        model.createGeometry(renderer.openGLContext,parseOBJString(fileContents.toStdString()));
+                        model.textureID=modelTextureID;
+                    }
+                }
+
                 #if DEBUG_MODULE_FILES
                 std::cout <<"\t\tModel:" <<  std::endl;
                 std::cout <<"\t\t\tpath: "<< modelPath <<std::endl;
                 #endif
             }
 
+            //heres where the layout will be loaded
+            for (const juce::var& var : *layoutComponents){
+                moduleData.components.push_back(componentFromJSONObject(var,moduleData));
+            }
         }else{
             #if DEBUG_MODULE_FILES
             std::cout << "NO MODULE.JSON FOUND!!" << std::endl;

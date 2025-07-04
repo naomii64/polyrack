@@ -18,8 +18,11 @@ public:
     void resized() override;
     void mouseMove(const juce::MouseEvent& event) override;
     void mouseDown(const juce::MouseEvent& event) override;
+    void onRendererLoad();
 
     TextureManager textureAtlas;
+
+    static AudioPluginAudioProcessorEditor* mainProcessEditor;
 
 private:
     // This reference is provided as a quick way for your editor to

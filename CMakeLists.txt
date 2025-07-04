@@ -77,6 +77,8 @@ target_sources(Polyrack
         source/Engine/TextManager.cpp
         source/Engine/TextureManager.cpp
         source/Engine/ModuleManager.cpp
+        source/Engine/Scene.cpp
+        source/Engine/Components.cpp
         #files
         source/Files/FileManager.cpp
         #ui

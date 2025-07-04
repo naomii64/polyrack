@@ -32,12 +32,13 @@ void printImagePixels(const juce::Image& image, int count = 10)
     }
 }
 
-
+AudioPluginAudioProcessorEditor* AudioPluginAudioProcessorEditor::mainProcessEditor;
 //==============================================================================
 AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAudioProcessor& p)
     : AudioProcessorEditor (&p), processorRef (p)
 {
     juce::ignoreUnused (processorRef);
+    mainProcessEditor=this;
 
     //initialize file system
     FileManager::init();
@@ -46,21 +47,7 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
     mainRenderer.addMouseListener(this, true); 
     setResizable(true,true);
     setSize (900, 900);
-    //load textures
-    textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("rack.png")));
-    textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("cable.png")));
-    EngineAssets::fontTextureID = textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("font_shaded.png")));
 
-    //ui textures
-    textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("ui_border_basic.png")));
-    EngineAssets::borderTextureID = textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("ui_border_metal.png")));
-
-    FileManager::loadModules(textureAtlas);
-
-    //finish the the
-    mainRenderer.mainTextureImage = textureAtlas.getTextureSheet();
-    mainRenderer.mainTextureAtlas = &textureAtlas;
-    //finally initialize UI
     addAndMakeVisible(mainRenderer);
 }
 
@@ -71,7 +58,22 @@ void AudioPluginAudioProcessorEditor::resized()
 {
     mainRenderer.setSize(getWidth(),getHeight());
 }
+void AudioPluginAudioProcessorEditor::onRendererLoad(){
+    std::cout << "Rendererer started!\n";
+    //load textures
+    EngineAssets::tRack = textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("rack.png")));
+    textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("cable.png")));
+    EngineAssets::tFont = textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("font_shaded.png")));
 
+    //ui textures
+    textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("ui_border_basic.png")));
+    EngineAssets::tBorder = textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("ui_border_metal.png")));
+    
+    FileManager::loadModules(mainRenderer,textureAtlas);
+    //finish the the
+    mainRenderer.mainTextureImage = textureAtlas.getTextureSheet();
+    mainRenderer.mainTextureAtlas = &textureAtlas;
+}
 
 //========INPUT========//
 void AudioPluginAudioProcessorEditor::mouseMove(const juce::MouseEvent& event)

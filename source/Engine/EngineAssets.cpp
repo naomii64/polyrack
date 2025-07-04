@@ -6,8 +6,9 @@ namespace EngineAssets{
     Model mCableEnd;
     Model mTestSquare;
     //texture IDS
-    int borderTextureID;
-    int fontTextureID;
+    int tBorder;
+    int tFont;
+    int tRack;
 
     void loadModel(Model& model, juce::OpenGLContext& context, const juce::String& fileName) {
         auto file = FileManager::assetFolder.getChildFile(fileName);

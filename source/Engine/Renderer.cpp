@@ -1,5 +1,8 @@
 #pragma once
 #include "Renderer.h"
+#include "Scene.h"
+#include "EngineAssets.h"
+#include "../PluginEditor.h"
 
 #define USE_FRAME_BUFFER false
 
@@ -148,6 +151,8 @@ Vec2 Renderer::getPixelSize(){
 }
 
 void Renderer::newOpenGLContextCreated(){
+    AudioPluginAudioProcessorEditor::mainProcessEditor->onRendererLoad();
+
     #define gl juce::gl
 
     vertexShader =
@@ -327,6 +332,8 @@ void Renderer::renderOpenGL(){
     //======================
     //>>>>draw calls go here
 
+    //draw all the instances of modules
+    Scene::draw(*this);
 
     disablePerspective();
 

@@ -1,5 +1,6 @@
 #pragma once
 #include "UIManager.h"
+#include "../Engine/Scene.h"
 
 UIMenu UIManager::mainUI;
 UIObject* UIManager::hoveredObject=nullptr;
@@ -45,8 +46,9 @@ void UIManager::init(Renderer& renderer){
         //increment i to keep track of the current module
         moduleButton.setText(renderer,moduleData.name);
 
-        moduleButton.onClick = [moduleData] {
-            std::cout << moduleData.name << std::endl;
+        moduleButton.onClick = [&moduleData] {
+            Scene::addModuleFromData(moduleData);        
+            UIManager::hideGroup(UIManager::moduleSelectionGroup);    
         };
 
         i++;

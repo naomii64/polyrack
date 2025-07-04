@@ -10,8 +10,9 @@ namespace EngineAssets{
     extern Model mCableEnd;
     extern Model mTestSquare;
     //textuerIDs
-    extern int borderTextureID;
-    extern int fontTextureID;
+    extern int tBorder;
+    extern int tFont;
+    extern int tRack;
 
     void loadModel(Model& model, const juce::OpenGLContext& context, const juce::String& fileName);
     void loadAll(juce::OpenGLContext &openGLContext);
