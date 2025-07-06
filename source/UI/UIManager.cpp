@@ -103,6 +103,7 @@ void UIManager::showGroup(int groupID){
 }
 void UIManager::click(const juce::MouseEvent& event){
     if(hoveredObject==nullptr){return;}
+    if(!hoveredObject->isVisible){return;}
     if (hoveredObject->onClick) {
         hoveredObject->onClick();
     }

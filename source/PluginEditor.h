@@ -18,6 +18,9 @@ public:
     void resized() override;
     void mouseMove(const juce::MouseEvent& event) override;
     void mouseDown(const juce::MouseEvent& event) override;
+    void mouseUp(const juce::MouseEvent& event) override;
+    void mouseDrag(const juce::MouseEvent& event) override;
+    void updateMouse(const juce::MouseEvent& event);
     void onRendererLoad();
 
     TextureManager textureAtlas;
@@ -25,6 +28,7 @@ public:
     static AudioPluginAudioProcessorEditor* mainProcessEditor;
 
 private:
+    Vec2 previousMousePos;
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     AudioPluginAudioProcessor& processorRef;

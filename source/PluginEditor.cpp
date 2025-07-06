@@ -68,19 +68,28 @@ void AudioPluginAudioProcessorEditor::onRendererLoad(){
     //ui textures
     textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("ui_border_basic.png")));
     EngineAssets::tBorder = textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("ui_border_metal.png")));
+
+    EngineAssets::tBlank = textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("blank.png")));
     
     FileManager::loadModules(mainRenderer,textureAtlas);
     //finish the the
     mainRenderer.mainTextureImage = textureAtlas.getTextureSheet();
     mainRenderer.mainTextureAtlas = &textureAtlas;
+
+    mainRenderer.setCameraPosition({0.0f,0.0f,10.0f});
 }
 
 //========INPUT========//
-void AudioPluginAudioProcessorEditor::mouseMove(const juce::MouseEvent& event)
-{
-    Vec2 position = Vec2(event.position.x,event.position.y);
-    UIManager::updateMousePos(mainRenderer,position);
+void AudioPluginAudioProcessorEditor::mouseMove(const juce::MouseEvent& event){updateMouse(event);}
+void AudioPluginAudioProcessorEditor::mouseDrag(const juce::MouseEvent& event){updateMouse(event);}
+void AudioPluginAudioProcessorEditor::updateMouse(const juce::MouseEvent& event){
+    Vec2 position = Vec2(event.position.x, event.position.y);
+    UIManager::updateMousePos(mainRenderer, position);
+    HitboxManager::dragHitbox(position - previousMousePos);
+
+    previousMousePos = position;
 }
+
 void AudioPluginAudioProcessorEditor::mouseDown(const juce::MouseEvent& event) {
     if (event.mods.isRightButtonDown()) {
         // Right mouse button was clicked
@@ -89,5 +98,11 @@ void AudioPluginAudioProcessorEditor::mouseDown(const juce::MouseEvent& event) {
     if (event.mods.isLeftButtonDown()) {
         // Right mouse button was clicked
         UIManager::click(event);
+        HitboxManager::click(mainRenderer,event);
     }
+}
+
+void AudioPluginAudioProcessorEditor::mouseUp(const juce::MouseEvent &event)
+{
+    HitboxManager::mouseUp(event);
 }

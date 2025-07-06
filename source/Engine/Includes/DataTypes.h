@@ -124,6 +124,14 @@ struct Vec3 {
             float(rand()) / RAND_MAX,
             float(rand()) / RAND_MAX);
     }
+
+    std::string toString() const {
+        std::string xString=std::to_string(x);
+        std::string yString=std::to_string(y);
+        std::string zString=std::to_string(z);
+
+        return "("+xString+","+yString+","+zString+")";
+    }
 };
 struct Vec2 {
     //constructors
@@ -167,6 +175,11 @@ struct Vec2 {
     Vec2& operator/=(float scalar) {
         x /= scalar;
         y /= scalar;
+        return *this;
+    }
+    Vec2& operator+=(const Vec2& other) noexcept {
+        x += other.x;
+        y += other.y;
         return *this;
     }
     std::string toString() const {
@@ -390,6 +403,144 @@ struct Mat4 {
             for (int j = 0; j < 4; ++j)
                 result(i,j) = (float(j),float(i));
         return result;
+    }
+    Vec3 getTranslation() const {
+        return Vec3(data[12], data[13], data[14]);
+    }
+    Vec4 operator*(const Vec4& v) const {
+        return Vec4{
+            data[0] * v.x + data[4] * v.y + data[8]  * v.z + data[12] * v.w,
+            data[1] * v.x + data[5] * v.y + data[9]  * v.z + data[13] * v.w,
+            data[2] * v.x + data[6] * v.y + data[10] * v.z + data[14] * v.w,
+            data[3] * v.x + data[7] * v.y + data[11] * v.z + data[15] * v.w
+        };
+    }
+    Mat4 inverse() const {
+        Mat4 inv;
+        const float* m = data;
+
+        inv.data[0] = m[5]  * m[10] * m[15] - 
+                      m[5]  * m[11] * m[14] - 
+                      m[9]  * m[6]  * m[15] + 
+                      m[9]  * m[7]  * m[14] +
+                      m[13] * m[6]  * m[11] - 
+                      m[13] * m[7]  * m[10];
+
+        inv.data[4] = -m[4]  * m[10] * m[15] + 
+                       m[4]  * m[11] * m[14] + 
+                       m[8]  * m[6]  * m[15] - 
+                       m[8]  * m[7]  * m[14] - 
+                       m[12] * m[6]  * m[11] + 
+                       m[12] * m[7]  * m[10];
+
+        inv.data[8] = m[4]  * m[9] * m[15] - 
+                      m[4]  * m[11] * m[13] - 
+                      m[8]  * m[5] * m[15] + 
+                      m[8]  * m[7] * m[13] + 
+                      m[12] * m[5] * m[11] - 
+                      m[12] * m[7] * m[9];
+
+        inv.data[12] = -m[4]  * m[9] * m[14] + 
+                        m[4]  * m[10] * m[13] +
+                        m[8]  * m[5] * m[14] - 
+                        m[8]  * m[6] * m[13] - 
+                        m[12] * m[5] * m[10] + 
+                        m[12] * m[6] * m[9];
+
+        inv.data[1] = -m[1]  * m[10] * m[15] + 
+                       m[1]  * m[11] * m[14] + 
+                       m[9]  * m[2] * m[15] - 
+                       m[9]  * m[3] * m[14] - 
+                       m[13] * m[2] * m[11] + 
+                       m[13] * m[3] * m[10];
+
+        inv.data[5] = m[0]  * m[10] * m[15] - 
+                      m[0]  * m[11] * m[14] - 
+                      m[8]  * m[2] * m[15] + 
+                      m[8]  * m[3] * m[14] + 
+                      m[12] * m[2] * m[11] - 
+                      m[12] * m[3] * m[10];
+
+        inv.data[9] = -m[0]  * m[9] * m[15] + 
+                       m[0]  * m[11] * m[13] + 
+                       m[8]  * m[1] * m[15] - 
+                       m[8]  * m[3] * m[13] - 
+                       m[12] * m[1] * m[11] + 
+                       m[12] * m[3] * m[9];
+
+        inv.data[13] = m[0]  * m[9] * m[14] - 
+                       m[0]  * m[10] * m[13] - 
+                       m[8]  * m[1] * m[14] + 
+                       m[8]  * m[2] * m[13] + 
+                       m[12] * m[1] * m[10] - 
+                       m[12] * m[2] * m[9];
+
+        inv.data[2] = m[1]  * m[6] * m[15] - 
+                      m[1]  * m[7] * m[14] - 
+                      m[5]  * m[2] * m[15] + 
+                      m[5]  * m[3] * m[14] + 
+                      m[13] * m[2] * m[7] - 
+                      m[13] * m[3] * m[6];
+
+        inv.data[6] = -m[0]  * m[6] * m[15] + 
+                       m[0]  * m[7] * m[14] + 
+                       m[4]  * m[2] * m[15] - 
+                       m[4]  * m[3] * m[14] - 
+                       m[12] * m[2] * m[7] + 
+                       m[12] * m[3] * m[6];
+
+        inv.data[10] = m[0]  * m[5] * m[15] - 
+                       m[0]  * m[7] * m[13] - 
+                       m[4]  * m[1] * m[15] + 
+                       m[4]  * m[3] * m[13] + 
+                       m[12] * m[1] * m[7] - 
+                       m[12] * m[3] * m[5];
+
+        inv.data[14] = -m[0]  * m[5] * m[14] + 
+                        m[0]  * m[6] * m[13] + 
+                        m[4]  * m[1] * m[14] - 
+                        m[4]  * m[2] * m[13] - 
+                        m[12] * m[1] * m[6] + 
+                        m[12] * m[2] * m[5];
+
+        inv.data[3] = -m[1] * m[6] * m[11] + 
+                       m[1] * m[7] * m[10] + 
+                       m[5] * m[2] * m[11] - 
+                       m[5] * m[3] * m[10] - 
+                       m[9] * m[2] * m[7] + 
+                       m[9] * m[3] * m[6];
+
+        inv.data[7] = m[0] * m[6] * m[11] - 
+                      m[0] * m[7] * m[10] - 
+                      m[4] * m[2] * m[11] + 
+                      m[4] * m[3] * m[10] + 
+                      m[8] * m[2] * m[7] - 
+                      m[8] * m[3] * m[6];
+
+        inv.data[11] = -m[0] * m[5] * m[11] + 
+                        m[0] * m[7] * m[9] + 
+                        m[4] * m[1] * m[11] - 
+                        m[4] * m[3] * m[9] - 
+                        m[8] * m[1] * m[7] + 
+                        m[8] * m[3] * m[5];
+
+        inv.data[15] = m[0] * m[5] * m[10] - 
+                       m[0] * m[6] * m[9] - 
+                       m[4] * m[1] * m[10] + 
+                       m[4] * m[2] * m[9] + 
+                       m[8] * m[1] * m[6] - 
+                       m[8] * m[2] * m[5];
+
+        float det = m[0] * inv.data[0] + m[1] * inv.data[4] + m[2] * inv.data[8] + m[3] * inv.data[12];
+
+        if (std::abs(det) < 1e-6f)
+            return Mat4(); // return identity if not invertible
+
+        float invDet = 1.0f / det;
+        for (int i = 0; i < 16; ++i)
+            inv.data[i] *= invDet;
+
+        return inv;
     }
     // Conversion operator to const float* (for const Mat4)
     operator const float* () const {

@@ -8,6 +8,11 @@
 
 #define DEBUG_MODE true
 
+#include "../Defines.h"
+#if draw_hitboxes
+#include "Hitboxes.h"
+#endif
+
 const char* fullscreenVertexShader = R"(
     #version 330 core
     layout(location = 0) in vec2 aPos;
@@ -146,11 +151,25 @@ void Renderer::drawBorderRect(float x, float y, float width, float height, float
     return;
 }
 
+Ray Renderer::rayFrom(Vec2 screenPos)
+{
+    return screenToWorldRay(screenPos,cameraMatrix,projectionMatrix,Vec2(float(getWidth()),float(getHeight())));
+}
+
 Vec2 Renderer::getPixelSize(){
     return Vec2(screenSpaceSize.x/getWidth(),screenSpaceSize.y/getHeight());
 }
 
-void Renderer::newOpenGLContextCreated(){
+void Renderer::setCameraPosition(Vec3 position)
+{
+
+    Mat4 translate = Mat4::translation(position*-1.0f);
+
+    cameraMatrix=translate;
+}
+
+void Renderer::newOpenGLContextCreated()
+{
     AudioPluginAudioProcessorEditor::mainProcessEditor->onRendererLoad();
 
     #define gl juce::gl
@@ -167,6 +186,7 @@ void Renderer::newOpenGLContextCreated(){
             uniform mat4 uProjectionMatrix;       
             uniform mat4 uModelMatrix;    
             uniform mat4 uModelNormal;            
+            uniform mat4 uViewMatrix;
 
             out vec4 vColour;
             out vec4 vWorldNormal;
@@ -174,7 +194,7 @@ void Renderer::newOpenGLContextCreated(){
             
             void main()
             {
-                gl_Position = uProjectionMatrix*uModelMatrix*aPosition; 
+                gl_Position = uProjectionMatrix*uViewMatrix*uModelMatrix*aPosition; 
                 
                 vWorldNormal = aNormal*uModelNormal;
                 vColour = aColor;
@@ -218,9 +238,6 @@ void Renderer::newOpenGLContextCreated(){
                 shadowColor*=vec4(3.0);
                 shadowColor+=vec4(0.5);
                 shadowColor.a=1.0;
-
-                //ignore shadows
-                shadowColor=vec4(1.0,1.0,1.0,1.0);
 
                 FragColor = shadowColor*texColor*uTintColor;
             }
@@ -329,14 +346,24 @@ void Renderer::renderOpenGL(){
     
     gl::glEnable(gl::GL_DEPTH_TEST);
     gl::glDepthFunc(gl::GL_LEQUAL);
+    shaderProgram->setUniformMat4("uViewMatrix", cameraMatrix, 1, gl::GL_FALSE);
+    
     //======================
     //>>>>draw calls go here
 
     //draw all the instances of modules
     Scene::draw(*this);
 
-    disablePerspective();
+    #if draw_hitboxes
+    HitboxManager::drawAllHitBoxes(*this);
+    #endif
 
+
+    //prepare to draw the ui
+    disablePerspective();
+    shaderProgram->setUniformMat4("uViewMatrix", Mat4::identity, 1, gl::GL_FALSE);
+
+    gl::glClear( gl::GL_DEPTH_BUFFER_BIT);
     //draw all the ui
     UIManager::drawAll(*this);
 

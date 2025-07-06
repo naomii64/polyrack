@@ -5,6 +5,8 @@
 #include "Includes/Model.h"
 #include "Renderer.h"
 #include "ModuleManager.h"
+#include "Includes/Animation.h"
+#include "Hitboxes.h"
 
 struct ModuleData;
 
@@ -17,6 +19,8 @@ class Component{
         virtual ~Component() = default;
         virtual void draw(Renderer& renderer) const;
         virtual void init(const juce::var& obj,ModuleData& moduleData);
+        virtual void initInstance();
+        virtual std::unique_ptr<Component> clone() const = 0;
 };
 
 class StaticMeshComponent : public Component{
@@ -24,12 +28,34 @@ class StaticMeshComponent : public Component{
         void draw(Renderer& renderer) const override;
         void init(const juce::var& obj,ModuleData& moduleData) override;
         Model* model;
+        std::unique_ptr<Component> clone() const override {
+            return std::make_unique<StaticMeshComponent>(*this);
+        }
 };
 
 class SocketComponent : public Component{
     public:
         void draw(Renderer& renderer) const override;
+        void init(const juce::var& obj,ModuleData& moduleData) override;
         bool isInput;
+        std::unique_ptr<Component> clone() const override {
+            return std::make_unique<SocketComponent>(*this);
+        }
+};
+class InputComponent : public Component{
+    public:
+        void draw(Renderer& renderer) const override;
+        void init(const juce::var& obj,ModuleData& moduleData) override;
+        void initInstance() override;
+        Animation* animation;
+        Hitbox* hitbox;
+        Vec3 hitboxSize={0.5f,0.5f,0.5f};
+
+        Vec2 value;
+
+        std::unique_ptr<Component> clone() const override {
+            return std::make_unique<InputComponent>(*this);
+        }
 };
 
 //unwrapping functions
@@ -55,10 +81,12 @@ inline std::unique_ptr<Component> componentFromJSONObject(const juce::var& obj,M
     if (componentType == "static mesh") {
         component = std::make_unique<StaticMeshComponent>();
     } else if (componentType == "socket") {
-        std::cout << "is socket!";
         component = std::make_unique<SocketComponent>();
+    } else if (componentType == "input"){
+        component = std::make_unique<InputComponent>();
     } else {
-        component = std::make_unique<Component>();
+        std::cout << "Unknown component type: " << componentType << std::endl;
+        return nullptr;
     }
 
     component->init(obj,moduleData);

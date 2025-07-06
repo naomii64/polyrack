@@ -5,10 +5,13 @@ namespace EngineAssets{
     Model mCablePort;
     Model mCableEnd;
     Model mTestSquare;
+    Model mCube;
+    Model mWireCube;
     //texture IDS
     int tBorder;
     int tFont;
     int tRack;
+    int tBlank;
 
     void loadModel(Model& model, juce::OpenGLContext& context, const juce::String& fileName) {
         auto file = FileManager::assetFolder.getChildFile(fileName);
@@ -20,6 +23,12 @@ namespace EngineAssets{
     void loadAll(juce::OpenGLContext &openGLContext) {
         loadModel(mCablePort,openGLContext,"cable_socket.obj");
         loadModel(mCableEnd,openGLContext,"cable_end.obj");
+        
+        //primatives
+        loadModel(mCube,openGLContext,"cube.obj");
         loadModel(mTestSquare,openGLContext,"test_square.obj");
+
+        //debugging stuff
+        loadModel(mWireCube,openGLContext,"wireFrameCube.obj");
     }
 }

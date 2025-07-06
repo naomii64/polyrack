@@ -9,6 +9,7 @@
 #include "TextureManager.h"
 //ui
 #include "../UI/UIManager.h"
+#include "Includes/Ray.h"
 
 #include <cmath>
 #include <vector>
@@ -57,6 +58,7 @@ public:
 		int textureID=0,
 		Vec4 tint = {1.0f,1.0f,1.0f,1.0f}
 	);
+	Ray rayFrom(Vec2 screenPos);
 
     Vec2 getPixelSize();
 
@@ -76,6 +78,8 @@ public:
 	
 	bool invertY=false;
 
+	void setCameraPosition(Vec3 position);
+
 private:
 	// Create an OpenGLContext for this Component.
 	juce::String vertexShader;
@@ -83,7 +87,7 @@ private:
 	std::unique_ptr<juce::OpenGLShaderProgram> shaderProgram;
 
 	juce::OpenGLFrameBuffer lowResBuffer;
-	int screenResolutionY = 256;
+	int screenResolutionY = 512;
 
 	//	screen sizes
 	//	---------------
@@ -95,13 +99,14 @@ private:
 	void renderOpenGL() override;
     void createTextureRectsFromAtlas(TextureManager &atlas);
     void openGLContextClosing() override;
-
-    Mat4 projectionMatrix;
-	Mat4 orthographicMatrix;
 	
 	float aspect = 0;
 	float fov = 90;
 
+	Mat4 cameraMatrix;
+
+    Mat4 projectionMatrix;
+	Mat4 orthographicMatrix;
 
 	GLuint fullscreenVAO = 0;
 	GLuint fullscreenVBO = 0;

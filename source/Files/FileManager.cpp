@@ -1,7 +1,7 @@
 #pragma once
 #include "FileManager.h"
 
-#define DEBUG_MODULE_FILES true
+#define DEBUG_MODULE_FILES false
 
 //fileManager Variables
 juce::File FileManager::appDataFolder;
@@ -82,6 +82,7 @@ void FileManager::loadModules(Renderer& renderer,TextureManager& textureAtlas) {
             juce::Array<juce::var>* moduleTags = parsed["tags"].getArray();
             juce::Array<juce::var>* moduleTextures = parsed["textures"].getArray();
             juce::Array<juce::var>* moduleModels = parsed["models"].getArray();
+            juce::Array<juce::var>* moduleAnimations = parsed["animations"].getArray();
             juce::Array<juce::var>* layoutComponents = moduleLayout["components"].getArray();
 
             #if DEBUG_MODULE_FILES
@@ -147,6 +148,18 @@ void FileManager::loadModules(Renderer& renderer,TextureManager& textureAtlas) {
                 std::cout <<"\t\t\tpath: "<< modelPath <<std::endl;
                 #endif
             }
+            //now load the animations
+            for(const juce::var& animation : *moduleAnimations){
+                Animation& animationData = moduleData.animations.emplace_back();
+                animationData.hitboxSize=readVec3FromObj(animation["hitboxSize"],Vec3(0.5f));
+                juce::Array<juce::var>* animationModels = animation["models"].getArray();
+                //for each model in the animation
+                for(const juce::var& model : *animationModels){
+                    int modelID = model.getProperty("modelID",0);
+                    animationData.models.push_back(&moduleData.models[modelID]);
+                }
+            }
+
 
             //heres where the layout will be loaded
             for (const juce::var& var : *layoutComponents){

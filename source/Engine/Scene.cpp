@@ -9,6 +9,7 @@ void Scene::addModuleFromData(const ModuleData &data)
 {
     ModuleInstance& instance = instances.emplace_back();
     instance.moduleData=&data;
+    instance.init();
 }
 void Scene::draw(Renderer& renderer){
     for(ModuleInstance& instance : instances){

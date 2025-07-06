@@ -11,10 +11,20 @@ class Renderer;
 struct ModuleInstance{
     Vec3 position;
     const ModuleData* moduleData;
+    std::vector<std::unique_ptr<Component>> components;
+
     void draw(Renderer& renderer){
-        // draw the instance of the module
-        for(const std::unique_ptr<Component>& component : moduleData->components){
+        for (std::unique_ptr<Component>& component : components) {
             component->draw(renderer);
+        }
+    }
+    //call after moduleData is set to create the instances
+    void init() {
+        std::cout << "copying over components..." << std::endl;
+        for (const auto& component : moduleData->components) {
+            std::unique_ptr<Component> cloned = component->clone();
+            cloned->initInstance();
+            components.push_back(std::move(cloned));
         }
     }
 };
