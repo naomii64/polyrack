@@ -1,0 +1,309 @@
+<style>
+    body{
+        padding:0;
+        margin:0;
+        overflow:hidden;
+        font-family:monospace;
+        height:100vh;
+        width:100vw;
+    }
+    .shade{
+		box-shadow: 0 0 5px black inset;
+	}
+    .tab-bar{
+        height:25px;
+    }
+    .tab-container{
+        flex-grow:1;
+        flex-direction:row;
+    }
+    .tab-contents{
+        display:flex;
+        height:100%;
+        width:100%;
+    }
+    .tab-menu{
+        display:flex;
+        flex-direction:column;
+        height:100%;
+    }
+    .side-pannel{
+        width:300px;
+        padding: 10px;
+    }
+    .layout-outer{
+        flex-grow:1;
+    }
+    .model-view{
+        flex-grow: 1;
+    }
+    .texture-list{
+        width: 100%;
+        height: 50%;
+    }
+    .model-list{
+        width: 100%;
+        height: 25%;
+    }
+    .animation-list{
+        width: 100%;
+        height: 10%;
+    }
+    canvas{
+        background-color: black;
+        image-rendering:pixelated;
+    }
+    .shader-selection{
+        display: flex;
+    }
+    .shader-selection > button{
+        flex-grow: 1;
+    }
+    .hint{
+        color: grey;
+        display:inline;
+    }
+    .import-zone{
+        position: absolute;
+        background-color: rgba(255, 255, 255, 0.514);
+        width: 100vw;
+        height: 100vh;
+        z-index: 999;
+        text-align: center;
+    }
+    .center{
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    .texture-editor-image-view{
+        flex-grow: 1;
+    }
+     .label{
+         font-weight:bold;
+     }
+    key{
+        border:1px solid black;
+        box-shadow: 0 3px 0 black;
+        padding:3px;
+    }
+    table.shortcuts{
+        border-spacing:10px;
+    }
+    button.animation-new{
+        width: 100%;
+    }
+    .list-button{
+        width: 100%;
+    }
+    .tab-button{
+        height: 100%;
+    }
+    table.variables th{
+        border: 1px solid black;
+    }
+    .xyz{
+        display: flex;
+    }
+    .xyz > button{
+        flex-grow: 1;
+    }
+    .layout-div{
+        flex-grow: 1;
+    }
+    .layout-list{
+        width: 100%;
+        height: 50%;
+    }
+    .layout-add-list{
+        width: 100%;
+        height: 0;
+        overflow: hidden;
+        transition: 0.2s height;
+    }
+    .add-component-button{
+        width: 100%;
+    }
+</style>
+<body>
+    <div class="shade import-zone" onclick="Importer.close()" id="import-zone">
+        <div class="center">
+            Drag Files In to import.<br>
+            (Click to cancel)
+        </div>
+        <input type="file" id="import-file-input" style="display: none;" />
+    </div>
+
+    <div class="tab-menu" id="main-tab-menu">
+        <tab id="layout-tab">
+            <tabTitle>Layout</tabTitle>
+            <tabContent>
+                <div class="side-pannel shade">
+                    <div id="layout-component-list" class="layout-list shade">
+                    </div>
+                    <button style="width: 100%;" id="layout-add-button">ADD</button>
+                    <div id="layout-add-list" class="layout-add-list shade"></div>
+                    <hr>
+                    <div>
+                        <div class="label">Show Extras:<input type="checkbox" id="extras-checkbox" checked></div>
+                    </div> 
+                </div>
+                <div id="layout-div" class="layout-div">      
+                </div>
+                <div class="side-pannel shade">
+                    <div class="shade">
+                        <div class="label">Layout:</div>
+                        <table style="width: 100%;">
+                            <tr id="layout-size-tr">
+
+                            </tr>
+                        </table>
+                    </div>               
+                    <hr>   
+                    <div id="component-attributes">
+                    </div>
+                </div>
+            </tabContent>
+        </tab>  
+        
+        <tab id="models-tab">
+            <tabTitle>Models</tabTitle>
+            <tabContent>
+                    <div id="model-view" class="model-view"></div>
+                    <div class="side-pannel shade">
+                        <button onclick="Importer.open()">Import</button>
+                        <div class="model-list shade" id="model-list"></div>
+                        <hr>
+                        <div class="shader-selection">
+                            <button onclick="MV.changeModelViewShader('normals')">Normals</button>
+                            <button onclick="MV.changeModelViewShader('uvs')">UVs</button>
+                            <button onclick="MV.changeModelViewShader('texture')">Texture</button>
+                            <button onclick="MV.changeModelViewShader('lit')">Lit</button>
+                        </div>
+                        <hr>
+                        <div class="label">rotate 90 degrees:</div>
+                        <div class="xyz">
+                            <button onclick="MV.rotX()">X</button>
+                            <button onclick="MV.rotY()">Y</button>
+                            <button onclick="MV.rotZ()">Z</button>
+                        </div>
+                        <hr>
+                        <div class="label">mirror:</div>
+                        <div class="xyz">
+                            <button onclick="MV.mirX()">X</button>
+                            <button onclick="MV.mirY()">Y</button>
+                            <button onclick="MV.mirZ()">Z</button>
+                        </div>
+                        <hr>
+                        <button onclick="MV.scaleModel()">Resize</button><br>
+                        <button onclick="MV.scaleModelUnit()">Resize to unit</button><br>
+                        <button onclick="MV.originToCenter()">Origin to center</button><br>
+                        <button onclick="MV.flipTris()">flip faces</button>
+                    </div>
+
+            </tabContent>
+        </tab>
+        <tab id="textures-tab">
+            <tabTitle>Textures</tabTitle>
+            <tabContent>
+                    <div class="texture-editor-image-view">
+                        <canvas id="texture-canvas" width="1" height="1"></canvas>
+                    </div>
+                    <div class="side-pannel shade">
+                        <button onclick="Importer.open()">Import</button>
+                        <div class="shade texture-list" id="texture-list">
+                        </div>
+                        <button id="base64-encode-button" onclick="TE.getBase64()">Encode Base64 String</button>
+                        <code id="image-base64-output"></code>
+                    </div>
+            </tabContent>
+        </tab>
+        <tab id="animation-tab">
+            <tabTitle>Animations</tabTitle>
+            <tabContent>
+                <div style="flex-grow: 1;">
+                    <div id="animation-canvas-div"></div>
+                </div>
+                <div class="side-pannel shade">
+                    <div>
+                        <div class="label">Preview:</div> 
+                        <input type="range" id="animation-preview-slider" style="width: 100%;" min="0" max="1" step="any">
+                        <hr>
+                        <div class="label">Animations:</div>
+                        <button onclick="AE.addAnimation()" class="animation-new">New</button> 
+                        <div id="animation-list" class="shade animation-list"></div>
+                        <div id="animation-settings"></div>
+                        <hr>
+                        <div class="label">Models:</div>
+                        <button onclick="AE.addModel()" class="animation-new">New</button> 
+                        <div id="animation-model-list" class="shade animation-list"></div>
+                        <hr>
+                        <div id="animation-model-settings" class="shade" style="width: 100%;"></div>
+                    </div>
+                </div>
+            </tabContent>
+        </tab>
+        
+        <tab id="dsp-tab">
+            <tabTitle>DSP</tabTitle>
+            <tabContent></tabContent>
+        </tab>
+        <tab id="file-tab">
+            <tabTitle>File</tabTitle>
+            <tabContent>
+                <div>
+                    <div><button onclick="saveProject()">Save <div class="hint">(ctrl + s)</div></button></div>
+                    <div><button onclick="Importer.open()">Load</button></div>
+                    <hr>
+                    <div class="label">Module Settings:</div>
+                    <div id="module-settings-div"></div>
+                    <hr>
+                    <div>
+                        <div class="label">Shortcuts:</div>
+                        <table class="shortcuts">
+                            <tr>
+                                <th><key>ctrl</key>+<key>S</key></th>
+                                <th> save project to .plk</th>
+                            </tr>
+                            <tr>
+                                <th><key>ctrl</key>+<key>D</key></th>
+                                <th> open import menu</th>
+                            </tr>
+                                                     <tr>
+                                <th><key>&#x1F845;/&#x1F847;/&#x1F844;/&#x1F846;</key></th>
+                                <th>rotate camera in 3D view while hovering cursor (hold <key>ctrl</key> to rotate faster)</th>
+                            </tr>
+                            <tr>
+                                <th><key>&#x1F845;/&#x1F847; + shift</key></th>
+                                <th>zoom 3D view while hovering cursor (hold <key>ctrl</key> to zoom faster)</th>
+                            </tr>
+                        </table>
+                    </div>
+                </div>  
+            </tabContent>
+        </tab>
+    </div>
+</body>
+<script src="global.js"></script>
+<!--library files-->
+<script src="lib/jszip.js"></script>
+<!--ui stuff-->
+<script src="ui/ui-helper.js"></script>
+<script src="ui/tab-menu.js"></script>
+
+<!--file stuff-->
+<script src="save-manager.js"></script>
+<script src="importer.js"></script>
+<script src="project.js"></script>
+<!--engine-->
+<script src="engine/data-types.js"></script>
+<script src="engine/renderer.js"></script>
+<!--editors-->
+<script src="editors/layout.js"></script>
+<script src="editors/textures.js"></script>
+<script src="editors/models.js"></script>
+<script src="editors/animations.js"></script>
+<script src="editors/file.js"></script>
+
+<script src="init.js"></script>
