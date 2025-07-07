@@ -160,12 +160,13 @@ Vec2 Renderer::getPixelSize(){
     return Vec2(screenSpaceSize.x/getWidth(),screenSpaceSize.y/getHeight());
 }
 
-void Renderer::setCameraPosition(Vec3 position)
+void Renderer::setCameraPosition(Vec3 position,Vec3 rotation)
 {
 
     Mat4 translate = Mat4::translation(position*-1.0f);
+    Mat4 rotate = Mat4::rotation(rotation).fastInverseRT();
 
-    cameraMatrix=translate;
+    cameraMatrix=rotate*translate;
 }
 
 void Renderer::newOpenGLContextCreated()
@@ -195,10 +196,12 @@ void Renderer::newOpenGLContextCreated()
             void main()
             {
                 gl_Position = uProjectionMatrix*uViewMatrix*uModelMatrix*aPosition; 
-                
+
                 vWorldNormal = aNormal*uModelNormal;
                 vColour = aColor;
                 vTexCoord = aTexCoord;
+
+                //gl_Position=round(gl_Position*32.0)/32.0;
             }
         )";
 
@@ -232,14 +235,17 @@ void Renderer::newOpenGLContextCreated()
                 
                 //final colors that do get combined
                 vec4 texColor = texture(myTexture,  cropUVSToTexture(vTexCoord,uTextureID));
-                vec4 shadowColor = vec4((mappedNormal.x+mappedNormal.y+mappedNormal.z)/3.0);
-                //apply contrast
-                shadowColor-=vec4(0.5);
-                shadowColor*=vec4(3.0);
-                shadowColor+=vec4(0.5);
-                shadowColor.a=1.0;
+                vec4 shadowColor = vec4(0.0);
+                shadowColor+=mappedNormal.y*3.0;
+                shadowColor+=mappedNormal.x;
+                shadowColor+=mappedNormal.z*2.0;
+                shadowColor/=4.0;
+                shadowColor*=shadowColor;
 
+                shadowColor.a=1.0;
                 FragColor = shadowColor*texColor*uTintColor;
+
+                //FragColor=round(FragColor*8.0)/8.0;
             }
         )";
 
@@ -335,6 +341,8 @@ void Renderer::renderOpenGL(){
     gl::glViewport(0, 0, lowResBuffer.getWidth(), lowResBuffer.getHeight());
     #endif
 
+    Scene::applyCameraSettings(*this);
+
     gl::glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     gl::glClear(gl::GL_COLOR_BUFFER_BIT | gl::GL_DEPTH_BUFFER_BIT);
     //bind the texture
@@ -353,7 +361,7 @@ void Renderer::renderOpenGL(){
 
     //draw all the instances of modules
     Scene::draw(*this);
-
+    
     #if draw_hitboxes
     HitboxManager::drawAllHitBoxes(*this);
     #endif

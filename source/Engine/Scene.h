@@ -34,5 +34,16 @@ class Scene{
     public:
         static void addModuleFromData(const ModuleData& data);
         static void draw(Renderer& renderer);
+        static void applyCameraSettings(Renderer& renderer);
         static std::vector<ModuleInstance> instances;
+        //camera settings
+        static float zoom;
+        static float realZoom;
+        static Vec2 panVelocity;
+        static Vec2 panPosition;
+        static float maxPanVelocity;
+        static float panAcceleartion;
+
+        //will probably move later so mouse pos is always in one place
+        static Vec2 mousePos;
 };

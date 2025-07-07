@@ -1,6 +1,7 @@
 #pragma once
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "Engine/Scene.h"
 
 //for debug
 #include <iostream>
@@ -84,10 +85,22 @@ void AudioPluginAudioProcessorEditor::mouseMove(const juce::MouseEvent& event){u
 void AudioPluginAudioProcessorEditor::mouseDrag(const juce::MouseEvent& event){updateMouse(event);}
 void AudioPluginAudioProcessorEditor::updateMouse(const juce::MouseEvent& event){
     Vec2 position = Vec2(event.position.x, event.position.y);
+    Scene::mousePos=position;
     UIManager::updateMousePos(mainRenderer, position);
     HitboxManager::dragHitbox(position - previousMousePos);
 
     previousMousePos = position;
+}
+
+void AudioPluginAudioProcessorEditor::mouseWheelMove(const juce::MouseEvent &event, const juce::MouseWheelDetails &wheel)
+{
+    float zoomSpeed=1.0f;
+    //get the sign
+    float sign=1.0f;
+    if(wheel.deltaY<0){
+        sign=-1.0f;
+    }
+    Scene::zoom-=sign*zoomSpeed;
 }
 
 void AudioPluginAudioProcessorEditor::mouseDown(const juce::MouseEvent& event) {

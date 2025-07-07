@@ -78,7 +78,7 @@ public:
 	
 	bool invertY=false;
 
-	void setCameraPosition(Vec3 position);
+	void setCameraPosition(Vec3 position,Vec3 rotation={0.0f,0.0f,0.0f});
 
 private:
 	// Create an OpenGLContext for this Component.

@@ -21,6 +21,9 @@ public:
     void mouseUp(const juce::MouseEvent& event) override;
     void mouseDrag(const juce::MouseEvent& event) override;
     void updateMouse(const juce::MouseEvent& event);
+
+    void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override;
+
     void onRendererLoad();
 
     TextureManager textureAtlas;

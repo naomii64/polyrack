@@ -51,28 +51,34 @@ inline Ray screenToWorldRay(Vec2 screenPos, Mat4 viewMatrix, Mat4 projectionMatr
 }
 inline RayHit rayIntersectsAABB(const Ray& ray, const AABB& box) {
     RayHit result;
+    float tMin = -INFINITY;
+    float tMax = INFINITY;
+    const float epsilon = 1e-6f;
 
-    float tMin = (box.min.x - ray.origin.x) / ray.direction.x;
-    float tMax = (box.max.x - ray.origin.x) / ray.direction.x;
-    if (tMin > tMax) std::swap(tMin, tMax);
+    for (int i = 0; i < 3; ++i) {
+        float origin = ray.origin[i];
+        float dir = ray.direction[i];
+        float minB = box.min[i];
+        float maxB = box.max[i];
 
-    float tyMin = (box.min.y - ray.origin.y) / ray.direction.y;
-    float tyMax = (box.max.y - ray.origin.y) / ray.direction.y;
-    if (tyMin > tyMax) std::swap(tyMin, tyMax);
+        if (std::abs(dir) < epsilon) {
+            // Ray is parallel to slab. No hit if origin not within slab
+            if (origin < minB || origin > maxB)
+                return result;
+        } else {
+            float invD = 1.0f / dir;
+            float t1 = (minB - origin) * invD;
+            float t2 = (maxB - origin) * invD;
+            if (t1 > t2) std::swap(t1, t2);
 
-    if ((tMin > tyMax) || (tyMin > tMax)) return result;
+            tMin = std::max(tMin, t1);
+            tMax = std::min(tMax, t2);
 
-    tMin = std::max(tMin, tyMin);
+            if (tMin > tMax) return result;
+        }
+    }
 
-    float tzMin = (box.min.z - ray.origin.z) / ray.direction.z;
-    float tzMax = (box.max.z - ray.origin.z) / ray.direction.z;
-    if (tzMin > tzMax) std::swap(tzMin, tzMax);
-
-    if ((tMin > tzMax) || (tzMin > tMax)) return result;
-
-    tMin = std::max(tMin, tzMin);
-
-    if (tMin < 0.0f) return result; // Hit is behind the ray origin
+    if (tMin < 0.0f) return result; // intersection is behind the origin
 
     result.hit = true;
     result.distance = tMin;
