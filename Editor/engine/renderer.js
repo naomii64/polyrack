@@ -337,7 +337,6 @@ void main() {
         this.canvas.width=x;
         this.canvas.height=y;
         this.gl=this.canvas.getContext("webgl2", { antialias: false });
-        this.aspect=this.canvas.height/this.canvas.width;
         this.shaderProgram=this.initShaderProgram(this.gl,vsSource,Renderer.fsSource);
         this.meshes=[];
         this.gl.enable(this.gl.CULL_FACE);
@@ -484,7 +483,43 @@ void main() {
 
         return shader;
     }
+    stretchToParent(){
+        
+        //calculate the canvas size
+        const parent = this.canvas.parentElement;
+        const rect=parent.getBoundingClientRect();
+
+        if(this.previousBoundingrect!=null){
+            if(this.previousBoundingrect.width==rect.width&&this.previousBoundingrect.height==rect.height){
+                return;
+            }
+        }
+        //style stuff
+        this.canvas.style.position='absolute';
+        this.previousBoundingrect=rect;
+
+        const width=Math.floor(this.canvas.height*rect.width/rect.height);
+        const height=this.canvas.height;
+
+        this.canvas.style.width=`${rect.width}px`;
+        this.canvas.style.height=`${rect.height}px`;
+        
+        this.canvas.width=width;
+        this.canvas.height=height;
+        this.gl.viewport(0,0,this.canvas.width,this.canvas.height);
+
+        if(this.hasPerspective!=null){
+            this.createPerspective(this.fov,this.znear,this.zfar);
+        }
+    }
         createPerspective(fov, znear = 0.1, zfar = 1000) {
+            //save for later
+            this.fov=fov;
+            this.znear=znear;
+            this.zfar=zfar;
+            this.hasPerspective=true;
+
+            this.aspect=this.canvas.height/this.canvas.width;
             this.projectionMatrix = Mat4.create();
             Mat4.perspective(this.projectionMatrix, fov * Math.PI / 180, 1 / this.aspect, znear, zfar);
 
@@ -560,6 +595,63 @@ void main() {
             gl.disableVertexAttribArray(cpos);
             gl.disableVertexAttribArray(upos);
         }
+        drawLines(mesh) {
+            const gl = this.gl;
+            const mPos = mesh.position;
+            const mRot = mesh.rotation;
+            const mScale = mesh.scale;
+            const modelMat = Mat4.create();
+            Mat4.translate(modelMat, mPos[X], mPos[Y], mPos[Z]);
+            Mat4.rotate(modelMat, mRot[X], mRot[Y], mRot[Z]);
+            Mat4.scale(modelMat,mScale[X],mScale[Y],mScale[Z]);
+        
+            const modelNormalMatrix=Mat4.create();
+            Mat4.rotateINV(modelNormalMatrix,mRot[X], mRot[Y], mRot[Z]);
+
+            gl.useProgram(this.shaderProgram);
+        
+            const vpos = gl.getAttribLocation(this.shaderProgram, "aVertexPosition");
+            const cpos = gl.getAttribLocation(this.shaderProgram, "aVertexColor");
+            const npos = gl.getAttribLocation(this.shaderProgram, "aVertexNormal");
+            const upos = gl.getAttribLocation(this.shaderProgram, "aVertexUV");
+        
+            gl.uniformMatrix4fv(gl.getUniformLocation(this.shaderProgram, 'uModelSpace'), false, modelMat);
+            gl.uniformMatrix4fv(gl.getUniformLocation(this.shaderProgram, 'uProjection'), false, this.projectionMatrix);
+            gl.uniformMatrix4fv(gl.getUniformLocation(this.shaderProgram, 'uView'), false, this.viewMatrix)
+            gl.uniformMatrix4fv(gl.getUniformLocation(this.shaderProgram, 'uNormal'), false, modelNormalMatrix)
+
+            const uTexLoc = gl.getUniformLocation(this.shaderProgram, "uTexture");
+
+            let tex=mesh.texture;
+            if (!tex) {
+                tex=this.defaultTexture;
+            }
+
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, tex);
+            gl.uniform1i(uTexLoc, 0); // texture unit 0
+
+            const stride = Float32Array.BYTES_PER_ELEMENT * Renderer.VERTEX_SIZE;
+        
+            gl.bindBuffer(gl.ARRAY_BUFFER, mesh.buffer);
+            
+            gl.enableVertexAttribArray(vpos);
+            gl.enableVertexAttribArray(npos);
+            gl.enableVertexAttribArray(cpos);
+            gl.enableVertexAttribArray(upos);
+        
+            gl.vertexAttribPointer(vpos, 3, gl.FLOAT, false, stride, 0);
+            gl.vertexAttribPointer(npos, 3, gl.FLOAT, false, stride, Float32Array.BYTES_PER_ELEMENT * 3);
+            gl.vertexAttribPointer(cpos, 4, gl.FLOAT, false, stride, Float32Array.BYTES_PER_ELEMENT * 6);
+            gl.vertexAttribPointer(upos, 2, gl.FLOAT, false, stride, Float32Array.BYTES_PER_ELEMENT * 10);
+        
+            gl.drawArrays(gl.LINES, 0, mesh.vertexCount);
+        
+            gl.disableVertexAttribArray(vpos);
+            gl.disableVertexAttribArray(npos);
+            gl.disableVertexAttribArray(cpos);
+            gl.disableVertexAttribArray(upos);
+        }
         static VERTEX_SIZE=12;
         newMesh(geometry){
             const gl=this.gl;
@@ -608,6 +700,25 @@ void main() {
             this.meshes.push(mesh);
             return mesh;
         }
+        newWireFrameRaw(geometry){
+            const gl=this.gl;
+            const buffer= gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+            gl.bufferData(gl.ARRAY_BUFFER, geometry, gl.STATIC_DRAW);
+            const mesh={
+                buffer:buffer,
+                vertexCount:geometry.length/Renderer.VERTEX_SIZE,
+                position:new Float32Array([0,0,0]),
+                rotation:new Float32Array([0,0,0]),
+                scale:new Float32Array([1,1,1]),
+                
+                color:new Float32Array([1,1,1]),
+                uvOffset:new Float32Array([0,0]),
+            }
+            this.meshes.push(mesh);
+            return mesh;
+        }
+        
         setDragCenter(x,y,z){
             this.dragCenter=[x,y,z];
             this.updateCamPos();

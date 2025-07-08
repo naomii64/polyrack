@@ -1,8 +1,0 @@
-const project={};
-project.models=[];
-project.textures=[];
-project.animations=[];
-project.name='new module';
-project.description='';
-project.tags=[];
-project.layout={};
