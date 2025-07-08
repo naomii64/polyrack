@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>rope prototype</title>
+</head>
+<style>
+    body{
+        background-color: grey;
+        margin: 0;
+        overflow: hidden;
+    }
+    canvas{
+        background-color: white;
+    }
+</style>
+<body>
+</body>
+<script>
+    const canvas=document.createElement('canvas');
+    canvas.width=window.innerWidth;
+    canvas.height=window.innerHeight;
+    const ctx=canvas.getContext('2d');
+    document.body.appendChild(canvas);
+    //CONSTANTS:
+        //GENERATION:
+        const pointCount=16;
+        const pointSpacing=20;
+        //PHYSICS:
+        const GRAVITY={
+            x:0,
+            y:980
+        };
+        const ITERATION_COUNT=10;
+        const DESIRED_DIST=30;
+        //DRAWING:
+        const pointRectSize=5;
+    //GENERATION:
+    const pointList=[];
+    for(let i=0;i<pointCount;i++){
+        const point={
+            x:(canvas.width*0.5)+i*pointSpacing,
+            y:(canvas.height*0.5),
+            fixed:false
+        };
+        point.prevX=point.x;
+        point.prevY=point.y;
+        pointList.push(point);
+    }
+    //fix the first point
+    pointList[0].fixed=true;
+    //PHYSICS:
+    function verletIntegration(){
+        for(const v of pointList){
+            if(v.fixed){v.prevX=v.x;v.prevY=v.y;continue;}
+            const copyX=v.x;
+            const copyY=v.y;
+
+            v.x=2*v.x-v.prevX+GRAVITY.x*DELTATIME*DELTATIME;
+            v.y=2*v.y-v.prevY+GRAVITY.y*DELTATIME*DELTATIME;
+            
+            v.prevX=copyX;
+            v.prevY=copyY;
+        }
+    }
+    const REALLYSMALL=0.0001;
+    function constrain(){
+        for(let iteration=0;iteration<ITERATION_COUNT;iteration++){
+            //loop through pairs of particles
+            for(let i=1;i<pointList.length;i++){
+                const v1 = pointList[i-1];
+                const v2 = pointList[i];
+                //will probably never happen but still
+                if(v1.fixed && v2.fixed) continue;
+
+                let diffX=v1.x-v2.x;
+                let diffY=v1.y-v2.y;
+                //to avoid divide by zero
+                if((diffX==0)&&(diffY==0)){
+                    const randomDir=Math.random()*Math.PI*2;
+                    diffX=Math.cos(randomDir)*REALLYSMALL;    
+                    diffY=Math.sin(randomDir)*REALLYSMALL;    
+                
+                }
+
+                const distance = Math.sqrt(diffX*diffX+diffY*diffY);
+                //normalized direction                
+                const xDir=diffX/distance;
+                const yDir=diffY/distance;
+                //calc distanceErrors
+                const distanceError = distance-DESIRED_DIST;
+                let distErrX=xDir*distanceError;
+                let distErrY=yDir*distanceError;
+
+                //should be the most common case, gets checked first
+                if(!v1.fixed && !v2.fixed){
+                    distErrX*=0.5;
+                    distErrY*=0.5;
+                    v2.x += distErrX;
+                    v2.y += distErrY;
+                    v1.x -= distErrX;
+                    v1.y -= distErrY;
+                    continue;
+                }
+                //now we know for sure that one that point is fixed and the other isnt, we only need to check one
+                if(v1.fixed){
+                    v2.x += distErrX;
+                    v2.y += distErrY;
+                    continue;
+                }else{
+                    v1.x -= distErrX;
+                    v1.y -= distErrY;
+                    continue;
+                }
+            }
+        }
+    }
+    //DRAWING
+    window.onresize=()=>{
+        canvas.width=window.innerWidth;
+        canvas.height=window.innerHeight;
+    }
+    function draw(){
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        let playText;
+        let subText;
+        if(playing){
+            playText="running...";
+            subText="(press space or enter to pause)"
+        }else{
+            playText="paused.";
+            subText="(press space to play or enter to step)"
+        }
+        const fontSize=30;
+        ctx.font=`${fontSize}px monospace`;
+        ctx.fillText(playText,0,fontSize);
+        
+        ctx.font=`${fontSize/2}px monospace`;
+        ctx.fillStyle='grey';
+        ctx.fillText(subText,0,fontSize*1.6);
+        //draw the path
+        ctx.beginPath();
+        ctx.moveTo(pointList[0].x,pointList[0].y);
+        for(let i=1;i<pointList.length;i++){
+            const v=pointList[i];
+            ctx.lineTo(v.x,v.y);
+        }
+        ctx.stroke();
+
+        for(const v of pointList){
+            //draw a square at each point
+            if(!v.fixed){
+                ctx.fillStyle='black';
+                ctx.strokeStyle='rgba(0,0,0,0)';
+            }else{
+                ctx.fillStyle='white';
+                ctx.strokeStyle='black';
+            }
+            ctx.beginPath();
+            ctx.rect(
+                v.x-(pointRectSize*0.5),
+                v.y-(pointRectSize*0.5),
+                pointRectSize,
+                pointRectSize);
+            ctx.fill();
+            ctx.stroke();
+        }
+        
+        ctx.strokeStyle='black';
+        ctx.fillStyle='black';
+    }
+    //DELTATIME
+    //60 physics ticks
+    const DELTATIME=1/60;
+    //TICK
+    function tick(){
+        let storedDraggedPointFixed;
+        if(draggedPoint){
+            storedDraggedPointFixed=draggedPoint.fixed;
+            draggedPoint.fixed=true;
+        }
+        //run physics
+        verletIntegration();
+        constrain();
+        //draw to screen
+        draw();
+        //repeat
+        if(playing) requestAnimationFrame(tick);
+
+        if(draggedPoint){
+            draggedPoint.fixed=storedDraggedPointFixed;
+        }
+    }
+    //CONSTROL:
+    let playing=false;
+    document.addEventListener('keydown',(e)=>{
+        //console.log(e.code);
+        if(e.code=="Space"){
+            togglePlay();
+        }
+        if(e.code=="Enter"){
+            playing=false;
+            tick();
+        }
+    });
+    //point dragging
+    let draggedPoint=null;
+    canvas.addEventListener('mousedown',(e)=>{
+        e.preventDefault();
+        const pointDragDistance=10;
+        for(const v of pointList){
+            const dist=Math.sqrt(((v.x-e.clientX)**2)+((v.y-e.clientY)**2))
+            if(dist<pointDragDistance){
+                switch(e.button){
+                    case 0:
+                        draggedPoint=v;
+                    break;
+                    case 2:
+                        v.fixed=!v.fixed;  
+                        if(!playing) draw();  
+                    break;
+                }
+            }
+        }
+    });
+    canvas.oncontextmenu=()=>{return false;}
+    document.addEventListener('mousemove',(e)=>{
+        if(draggedPoint){
+            draggedPoint.x=e.clientX;
+            draggedPoint.y=e.clientY;
+            if(!playing) draw();
+        }
+    });
+    document.addEventListener('mouseup',(e)=>{
+        draggedPoint=null;
+    });
+    function togglePlay(){
+        playing=!playing;
+        if(playing) tick();
+    }
+    togglePlay();
+</script>
+</html>
