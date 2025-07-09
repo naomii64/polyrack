@@ -1,4 +1,6 @@
 #include "Hitboxes.h"
+#include "juce_gui_basics/juce_gui_basics.h"
+#include "Renderer.h"
 
 #if draw_hitboxes
 #include "EngineAssets.h"

@@ -36,8 +36,6 @@ void InputComponent::initInstance()
         this->value.y=std::max(this->value.y,0.0f);
         this->value.x=std::min(this->value.x,1.0f);
         this->value.y=std::min(this->value.y,1.0f);
-
-        std::cout << this->value.toString() << "\n";
     };
     hitbox->bounds=hitboxSize;
     hitbox->position=position;
@@ -58,5 +56,5 @@ void SocketComponent::draw(Renderer &renderer) const
 void InputComponent::draw(Renderer &renderer) const
 {
     if(animation==nullptr){return;}
-    animation->draw(renderer,position);
+    animation->draw(value,renderer,position);
 }

@@ -158,36 +158,20 @@ void FileManager::loadModules(Renderer& renderer,TextureManager& textureAtlas) {
                     int modelID = model.getProperty("modelID",0);
                     animationData.models.push_back(&moduleData.models[modelID]);
                     juce::var functionsVar = model.getProperty("functions", juce::var());
-                    AnimFunctionCollection& funcs=animationData.animFunctions.emplace_back();
-                    if (auto* obj = functionsVar.getDynamicObject())
-                    {
-                        funcs.x = obj->getProperty("x").toString().toStdString();
-                        funcs.x = obj->getProperty("y").toString().toStdString();
-                        funcs.x = obj->getProperty("z").toString().toStdString();
-
-                        funcs.rx = obj->getProperty("rx").toString().toStdString();
-                        funcs.ry = obj->getProperty("ry").toString().toStdString();
-                        funcs.rz = obj->getProperty("rz").toString().toStdString();
-                        
-                        funcs.sx = obj->getProperty("sx").toString().toStdString();
-                        funcs.sy = obj->getProperty("sy").toString().toStdString();
-                        funcs.sz = obj->getProperty("sz").toString().toStdString();
-
-                        /*
-                        //debug stuff
-                        std::cout<<"x:"<<funcs.x<<"\n";
-                        std::cout<<"y:"<<funcs.y<<"\n";
-                        std::cout<<"z:"<<funcs.z<<"\n";
-                    
-                        std::cout<<"rx:"<<funcs.rx<<"\n";
-                        std::cout<<"ry:"<<funcs.ry<<"\n";
-                        std::cout<<"rz:"<<funcs.rz<<"\n";
-                    
-                        std::cout<<"sx:"<<funcs.sx<<"\n";
-                        std::cout<<"sy:"<<funcs.sy<<"\n";
-                        std::cout<<"sz:"<<funcs.sz<<"\n";
-                        */
-                    }
+                    std::unique_ptr<AnimFunctionCollection>& funcs = animationData.animFunctions.emplace_back(std::make_unique<AnimFunctionCollection>());
+                    std::cout<<"function collection created\n";
+                    std::cout<<"attempting to set function properties...\n";
+                    funcs->x = functionsVar.getProperty("x","0").toString().toStdString();
+                    funcs->y = functionsVar.getProperty("y","0").toString().toStdString();
+                    funcs->z = functionsVar.getProperty("z","0").toString().toStdString();
+                    funcs->rx = functionsVar.getProperty("rx","0").toString().toStdString();
+                    funcs->ry = functionsVar.getProperty("ry","0").toString().toStdString();
+                    funcs->rz = functionsVar.getProperty("rz","0").toString().toStdString();
+                    funcs->sx = functionsVar.getProperty("sx","0").toString().toStdString();
+                    funcs->sy = functionsVar.getProperty("sy","0").toString().toStdString();
+                    funcs->sz = functionsVar.getProperty("sz","0").toString().toStdString();
+                    std::cout<<"done!\n";
+                    funcs->compileExpressions();
                 }
             }
 

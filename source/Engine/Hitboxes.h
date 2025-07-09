@@ -3,11 +3,8 @@
 #include "Includes/DataTypes.h"
 #include <vector>
 #include "Includes/Ray.h"
-
-#if draw_hitboxes
 #include "Renderer.h"
 class Renderer;
-#endif
 
 struct Hitbox
 {
