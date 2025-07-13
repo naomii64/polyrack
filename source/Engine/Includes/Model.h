@@ -4,6 +4,7 @@
 //engine imports
 #include "DataTypes.h"
 #include "Vertex.h"
+#include <vector>
 
 #define DEBUG_MODE true
 
@@ -13,17 +14,21 @@ public:
     GLuint vbo = 0;
     GLsizei vertexCount = 0;
 
+    //group stuff
+    GLuint groupVBO = 0;
+    bool hasGroupBuffer = false;
+
     Model(){}
     ~Model() {
         //auto& gl = scene.openGLComponent.getContext().extensions;
         //if (vbo != 0) gl.glDeleteBuffers(1, &vbo);
     }
     // Create geometry from a vertex buffer only (no index buffer)
-    void createGeometry(juce::OpenGLContext& openGLContext, const std::vector<Vertex>& vertexBuffer) {
+    void createGeometry(juce::OpenGLContext& openGLContext, const std::vector<Vertex>& vertexBuffer, const std::vector<uint8_t>& groupBuffer = {}) {
         auto& gl = openGLContext.extensions;
         
         #if DEBUG_MODE
-            std::cout << "generating mode of " << vertexBuffer.size() << " vertices" << std::endl;
+            std::cout << "generating model of " << vertexBuffer.size() << " vertices" << std::endl;
         #endif
 
         if (vbo == 0) gl.glGenBuffers(1, &vbo);
@@ -33,9 +38,27 @@ public:
 
         vertexCount = static_cast<GLsizei>(vertexBuffer.size());
         
+
+        // If group buffer is provided
+        if (!groupBuffer.empty()) {
+            #if DEBUG_MODE
+                std::cout << "creating groupids" << std::endl;
+            #endif
+
+            if (groupVBO == 0) gl.glGenBuffers(1, &groupVBO);
+            gl.glBindBuffer(juce::gl::GL_ARRAY_BUFFER, groupVBO);
+            gl.glBufferData(juce::gl::GL_ARRAY_BUFFER, groupBuffer.size(),
+                            groupBuffer.data(), juce::gl::GL_STATIC_DRAW);
+            hasGroupBuffer = true;
+        } else {
+            hasGroupBuffer = false;
+        }
+
         #if DEBUG_MODE
             std::cout << "done!" << std::endl;
         #endif
+
+
     }
     // Transform data
 	Vec3 position{ 0.0f, 0.0f, 0.0f };

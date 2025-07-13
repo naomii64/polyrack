@@ -12,11 +12,17 @@ namespace EngineAssets{
     extern Model mCube;
 
     extern Model mWireCube;
+    extern Model mAxis;
+
+    extern Model mCableModel;
     //textuerIDs
     extern int tBorder;
     extern int tFont;
     extern int tRack;
     extern int tBlank;
+    extern int tCable;
+
+    extern int tAxis;
 
     void loadModel(Model& model, const juce::OpenGLContext& context, const juce::String& fileName);
     void loadAll(juce::OpenGLContext &openGLContext);

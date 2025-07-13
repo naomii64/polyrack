@@ -35,11 +35,9 @@ void Scene::draw(Renderer& renderer){
 void Scene::applyCameraSettings(Renderer& renderer){
     Vec3 cameraPos;
     Vec3 cameraRot;
-    //degrees
-    const float lookTurnAmount = 2.5f;
 
     //zoom
-    realZoom=lerp(realZoom,zoom,0.5f);    
+    realZoom=Math::lerp(realZoom,zoom,0.5f);    
     cameraPos.z=realZoom;
 
     //pan
@@ -57,10 +55,13 @@ void Scene::applyCameraSettings(Renderer& renderer){
     cameraPos.y=panPosition.y;
 
     //rotational pan (didnt like how it felt)
-    //Vec2 normalizedMousePos=((mousePos/renderer.screenSize)-Vec2(0.5f))*2.0f;
+    /*
+    //degrees
+    const float lookTurnAmount = 2.5f;
+    Vec2 normalizedMousePos=((mousePos/renderer.screenSize)-Vec2(0.5f))*2.0f;
 
-    //cameraRot.y=-normalizedMousePos.x*lookTurnAmount*(juce::MathConstants<float>::pi/180.0f);
-    //cameraRot.x=-normalizedMousePos.y*lookTurnAmount*(juce::MathConstants<float>::pi/180.0f);
-
+    cameraRot.y=-normalizedMousePos.x*lookTurnAmount*(juce::MathConstants<float>::pi/180.0f);
+    cameraRot.x=-normalizedMousePos.y*lookTurnAmount*(juce::MathConstants<float>::pi/180.0f);
+    */
     renderer.setCameraPosition(cameraPos,cameraRot);
 }

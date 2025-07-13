@@ -1,5 +1,6 @@
 :start
 
+python compileShaders.py
 "C:\Program Files\CMake\bin\cmake.EXE" --build build --config Debug --target Polyrack_Standalone -j 18 --
 
 @cd build\Polyrack_artefacts\Debug\Standalone

@@ -63,7 +63,7 @@ void AudioPluginAudioProcessorEditor::onRendererLoad(){
     std::cout << "Rendererer started!\n";
     //load textures
     EngineAssets::tRack = textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("rack.png")));
-    textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("cable.png")));
+    EngineAssets::tCable = textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("cable.png")));
     EngineAssets::tFont = textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("font_shaded.png")));
 
     //ui textures
@@ -72,6 +72,9 @@ void AudioPluginAudioProcessorEditor::onRendererLoad(){
 
     EngineAssets::tBlank = textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("blank.png")));
     
+    EngineAssets::tAxis = textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("axis.png")));
+    
+
     FileManager::loadModules(mainRenderer,textureAtlas);
     //finish the the
     mainRenderer.mainTextureImage = textureAtlas.getTextureSheet();

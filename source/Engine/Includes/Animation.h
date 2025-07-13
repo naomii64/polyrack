@@ -3,7 +3,13 @@
 #include "Model.h"
 #include "../Renderer.h"
 #include "DataTypes.h"
+
+//disable type conversion warning
+#pragma warning(push)
+#pragma warning(disable : 4244)
 #include "../../lib/exprtk.hpp"
+#pragma warning(pop)
+
 class Renderer;
 
 
@@ -61,15 +67,15 @@ struct AnimFunctionCollection{
         parser.compile(sy, exp_sy);
         parser.compile(sz, exp_sz);
         
-        std::cout<<"expressions compiled!\n";
+        //std::cout<<"expressions compiled!\n";
     }
 };
 struct Animation{
     std::vector<Model*> models;
     std::vector<std::unique_ptr<AnimFunctionCollection>> animFunctions;
     Vec3 hitboxSize={1.0f,1.0f,1.0f};
-
-    void draw(const Vec2& values,Renderer& renderer,Vec3 position={0.0f,0.0f,0.0f},Vec3 rotation={0.0f,0.0f,0.0f},Vec3 scale={1.0f,1.0f,1.0f}){
+    
+    void draw(const Vec2& values,Renderer& renderer,Vec3 position={0.0f,0.0f,0.0f},Vec3 scale={1.0f,1.0f,1.0f}){
         for(int i=0;i<models.size();i++){
             std::unique_ptr<AnimFunctionCollection>& funcs = animFunctions[i];
             Model* model = models[i];

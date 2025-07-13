@@ -4,6 +4,7 @@
 #include <sstream>
 #include <string>
 #include "juce_core/juce_core.h"
+#include "CustomMath.h"
 
 //disable compiler specific warning
 #pragma warning(disable : 4201)
@@ -18,7 +19,7 @@
 struct Vec2;
 struct Vec3;
 struct Mat4;
-
+struct Transform;
 
 struct Vec3 {
     union {
@@ -65,6 +66,12 @@ struct Vec3 {
         x += other.x;
         y += other.y;
         z += other.z;
+        return *this;
+    }
+    Vec3& operator-=(const Vec3& other) noexcept {
+        x -= other.x;
+        y -= other.y;
+        z -= other.z;
         return *this;
     }
     //scalar operations
@@ -123,6 +130,13 @@ struct Vec3 {
             float(rand()) / RAND_MAX,
             float(rand()) / RAND_MAX,
             float(rand()) / RAND_MAX);
+    }
+    static Vec3 lerp(Vec3 A, Vec3 B, float i){
+        return Vec3(
+            Math::lerp(A.x,B.x,i),
+            Math::lerp(A.y,B.y,i),
+            Math::lerp(A.z,B.z,i)
+        );
     }
 
     std::string toString() const {
@@ -545,5 +559,70 @@ struct Mat4 {
     // Conversion operator to const float* (for const Mat4)
     operator const float* () const {
         return data;
+    }
+};
+struct Mat3 {
+    float data[9]; // column-major order
+
+    Mat3() {
+        for (int i = 0; i < 9; ++i)
+            data[i] = (i % 4 == 0) ? 1.0f : 0.0f; // identity
+    }
+
+    Mat3(
+        float m00, float m01, float m02,
+        float m10, float m11, float m12,
+        float m20, float m21, float m22
+    ) {
+        data[0] = m00; data[3] = m01; data[6] = m02;
+        data[1] = m10; data[4] = m11; data[7] = m12;
+        data[2] = m20; data[5] = m21; data[8] = m22;
+    }
+
+    float& operator()(int row, int col) { return data[col * 3 + row]; }
+    const float& operator()(int row, int col) const { return data[col * 3 + row]; }
+
+    // Multiply two matrices
+    Mat3 operator*(const Mat3& other) const {
+        Mat3 result;
+        for (int row = 0; row < 3; ++row) {
+            for (int col = 0; col < 3; ++col) {
+                float sum = 0.0f;
+                for (int k = 0; k < 3; ++k) {
+                    sum += (*this)(row, k) * other(k, col);
+                }
+                result(row, col) = sum;
+            }
+        }
+        return result;
+    }
+
+    static Mat3 translation(float x, float y){
+        Mat3 result;
+        result(0,2)=x;
+        result(1,2)=y;
+        return result;
+    }
+    static Mat3 scaling(float x, float y){
+        Mat3 result;
+        result(0,0)=x;
+        result(1,1)=y;
+        return result;
+    }
+
+    // Identity matrix constant
+    static constexpr float identity[9] = {
+        1.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 1.0f
+    };
+};
+
+struct Transform{
+    Vec3 position;
+    Vec3 rotation;
+    Vec3 scale={1.0f,1.0f,1.0f};
+    Mat4 getMatrix() const {
+        return Mat4::translation(position)*Mat4::rotation(rotation)*Mat4::scaling(scale);
     }
 };

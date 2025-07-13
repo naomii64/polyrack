@@ -1,4 +1,6 @@
 #pragma once
+#include "Engine.h"
+
 #include "Renderer.h"
 #include "Scene.h"
 #include "EngineAssets.h"
@@ -12,6 +14,8 @@
 #if draw_hitboxes
 #include "Hitboxes.h"
 #endif
+
+#include "../shaders/shaders.h"
 
 const char* fullscreenVertexShader = R"(
     #version 330 core
@@ -101,7 +105,7 @@ void Renderer::drawModelAt(Model& model, Vec3 position, Vec3 rotation, Vec3 scal
         gl.glEnableVertexAttribArray(1);
         gl.glEnableVertexAttribArray(2);
         gl.glEnableVertexAttribArray(3);
-
+        
         //xyz
         gl.glVertexAttribPointer(0, 3, juce::gl::GL_FLOAT, juce::gl::GL_FALSE, sizeof(Vertex), nullptr);
         //nxyz
@@ -110,6 +114,13 @@ void Renderer::drawModelAt(Model& model, Vec3 position, Vec3 rotation, Vec3 scal
         gl.glVertexAttribPointer(2, 4, juce::gl::GL_FLOAT, juce::gl::GL_FALSE, sizeof(Vertex), (GLvoid*)(sizeof(float) * 6));
         //uv
         gl.glVertexAttribPointer(3, 2, juce::gl::GL_FLOAT, juce::gl::GL_FALSE, sizeof(Vertex), (GLvoid*)(sizeof(float) * 10));
+        
+        if (model.hasGroupBuffer) {
+            gl.glBindBuffer(juce::gl::GL_ARRAY_BUFFER, model.groupVBO);
+            gl.glEnableVertexAttribArray(4); // or any unused attribute slot
+            juce::gl::glVertexAttribIPointer(4, 1, juce::gl::GL_UNSIGNED_BYTE, juce::gl::GL_FALSE, 0);
+        }
+        
 
         Vec3 usedScale=scale;
         if(invertY){
@@ -128,6 +139,7 @@ void Renderer::drawModelAt(Model& model, Vec3 position, Vec3 rotation, Vec3 scal
         gl.glDisableVertexAttribArray(1);
         gl.glDisableVertexAttribArray(2);
         gl.glDisableVertexAttribArray(3);
+        gl.glDisableVertexAttribArray(4);
 }
 void Renderer::drawModel(Model& model){
     drawModelAt(model,model.position,model.rotation,model.scale);    
@@ -151,6 +163,11 @@ void Renderer::drawBorderRect(float x, float y, float width, float height, float
     return;
 }
 
+void Renderer::setUVMatrix(Mat3 matrix)
+{
+    shaderProgram->setUniformMat3("uTexCoordMatrix",matrix.data,1,false);
+}
+
 Ray Renderer::rayFrom(Vec2 screenPos)
 {
     return screenToWorldRay(screenPos,cameraMatrix,projectionMatrix,Vec2(float(getWidth()),float(getHeight())));
@@ -169,85 +186,40 @@ void Renderer::setCameraPosition(Vec3 position,Vec3 rotation)
     cameraMatrix=rotate*translate;
 }
 
+void Renderer::uploadMatrixList(std::vector<Mat4>& matrices)
+{
+    #define gl juce::gl
+        
+    if (matrices.empty()) {
+        std::cout << "no matrices to upload!\n";
+        return;
+    }
+
+    const int matrixCount = matrices.size();
+    //const int floatLength = matrixCount * 16;
+    GLfloat data[17 * 16]; //there are 17 matrices
+
+    // Flatten Mat4 list into float array
+    for (int i = 0; i < matrixCount; ++i) {
+        const Mat4& m = matrices[i];
+        for (int j = 0; j < 16; ++j) {
+            data[i * 16 + j] = m.data[j]; // assumes your Mat4 has float data[16]
+        }
+    }
+
+    shaderProgram->use();
+    gl::glUniformMatrix4fv(shaderProgram->getUniformIDFromName("uMatrices"), matrixCount, gl::GL_FALSE, data);
+
+    #undef gl
+}
+
 void Renderer::newOpenGLContextCreated()
 {
     AudioPluginAudioProcessorEditor::mainProcessEditor->onRendererLoad();
-
     #define gl juce::gl
-
-    vertexShader =
-        R"(
-            #version 330 core
-
-            layout(location = 0) in vec4 aPosition; 
-            layout(location = 1) in vec4 aNormal;
-            layout(location = 2) in vec4 aColor;     
-            layout(location = 3) in vec2 aTexCoord;
-
-            uniform mat4 uProjectionMatrix;       
-            uniform mat4 uModelMatrix;    
-            uniform mat4 uModelNormal;            
-            uniform mat4 uViewMatrix;
-
-            out vec4 vColour;
-            out vec4 vWorldNormal;
-            out vec2 vTexCoord;            
-            
-            void main()
-            {
-                gl_Position = uProjectionMatrix*uViewMatrix*uModelMatrix*aPosition; 
-
-                vWorldNormal = aNormal*uModelNormal;
-                vColour = aColor;
-                vTexCoord = aTexCoord;
-
-                //gl_Position=round(gl_Position*32.0)/32.0;
-            }
-        )";
-
-    fragmentShader =
-        R"(
-            #version 330 core
-            
-            in vec4 vColour;
-            in vec2 vTexCoord;    
-            in vec4 vWorldNormal;
-
-            //uniforms
-            uniform vec4 uTextureRects[64];
-            uniform sampler2D myTexture;
-            uniform int uTextureID;
-            
-            uniform vec4 uTintColor=vec4(1.0,1.0,1.0,1.0);
-            
-            layout(location = 0) out vec4 FragColor;
-
-            vec2 cropUVSToTexture(vec2 inputUV, int textureID)
-            {
-                vec4 rect = uTextureRects[textureID]; // x, y, width, height
-                vec2 wrappedUV = fract(inputUV);      // ensures 0.0 ≤ UV < 1.0
-                return rect.xy + wrappedUV * rect.zw;
-            }
-
-            void main()
-            {
-                vec4 mappedNormal = (vWorldNormal+vec4(1.0))/vec4(2.0);
-                
-                //final colors that do get combined
-                vec4 texColor = texture(myTexture,  cropUVSToTexture(vTexCoord,uTextureID));
-                vec4 shadowColor = vec4(0.0);
-                shadowColor+=mappedNormal.y*3.0;
-                shadowColor+=mappedNormal.x;
-                shadowColor+=mappedNormal.z*2.0;
-                shadowColor/=4.0;
-                shadowColor*=shadowColor;
-
-                shadowColor.a=1.0;
-                FragColor = shadowColor*texColor*uTintColor;
-
-                //FragColor=round(FragColor*8.0)/8.0;
-            }
-        )";
+    //define shaders
+    vertexShader = VS_GLSL;
+    fragmentShader = FS_GLSL;
 
     // Create an instance of OpenGLShaderProgram
     shaderProgram.reset(new juce::OpenGLShaderProgram(openGLContext));
@@ -264,8 +236,8 @@ void Renderer::newOpenGLContextCreated()
     //enabling stuff
     gl::glEnable(gl::GL_BLEND);
     gl::glBlendFunc(gl::GL_SRC_ALPHA, gl::GL_ONE_MINUS_SRC_ALPHA);
-    //gl::glEnable(gl::GL_CULL_FACE);
-    //gl::glCullFace(gl::GL_BACK);
+    gl::glEnable(gl::GL_CULL_FACE);
+    gl::glCullFace(gl::GL_BACK);
 
     //==============================
     //load the main texture
@@ -326,8 +298,15 @@ void Renderer::newOpenGLContextCreated()
     gl::glTexParameteri(gl::GL_TEXTURE_2D, gl::GL_TEXTURE_MAG_FILTER, gl::GL_NEAREST);
     gl::glBindTexture(gl::GL_TEXTURE_2D, 0);
     #endif
+
+    //initialize engine
+    Engine::renderer=this;
+    Engine::init();
 }
 void Renderer::renderOpenGL(){
+    Engine::calculateDeltaTime();
+    Engine::runPhysics();
+
     if(!canBeSeen()){return;}
     
     shaderProgram->use();
@@ -360,8 +339,12 @@ void Renderer::renderOpenGL(){
     //>>>>draw calls go here
 
     //draw all the instances of modules
+    Engine::draw();
+    
+    //REMOVE THIS AFTER NEW RENDERING SYSTEM IS IMPLEMENTED
     Scene::draw(*this);
     
+
     #if draw_hitboxes
     HitboxManager::drawAllHitBoxes(*this);
     #endif

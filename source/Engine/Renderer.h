@@ -58,12 +58,15 @@ public:
 		int textureID=0,
 		Vec4 tint = {1.0f,1.0f,1.0f,1.0f}
 	);
+
+	void setUVMatrix(Mat3 matrix);
+
 	Ray rayFrom(Vec2 screenPos);
 
     Vec2 getPixelSize();
 
     //juces
-	juce::Image& mainTextureImage=juce::Image();
+	juce::Image mainTextureImage=juce::Image();
 	TextureManager* mainTextureAtlas=nullptr;
 
 	juce::OpenGLContext openGLContext;
@@ -79,7 +82,7 @@ public:
 	bool invertY=false;
 
 	void setCameraPosition(Vec3 position,Vec3 rotation={0.0f,0.0f,0.0f});
-
+	void uploadMatrixList(std::vector<Mat4>& matrices);
 private:
 	// Create an OpenGLContext for this Component.
 	juce::String vertexShader;

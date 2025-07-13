@@ -72,6 +72,7 @@ target_sources(Polyrack
         source/PluginEditor.cpp
         source/PluginProcessor.cpp
         #engine
+        source/Engine/Engine.cpp
         source/Engine/Renderer.cpp
         source/Engine/EngineAssets.cpp
         source/Engine/TextManager.cpp
@@ -86,6 +87,8 @@ target_sources(Polyrack
         source/UI/UIObject.cpp
         source/UI/UIManager.cpp
         source/UI/UIMenu.cpp
+        #object
+        source/Engine/Objects/Object.cpp
 )
 
 # `target_compile_definitions` adds some preprocessor definitions to our target. In a Projucer
