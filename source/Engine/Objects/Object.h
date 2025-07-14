@@ -37,6 +37,7 @@ struct CablePoint{
 
     //might replace later with storing the matrix
     Vec3 rotation;
+    Mat4 matrix;
 };
 class POBJ_Cable : public PhysicsObject{
     public:
@@ -50,6 +51,7 @@ class POBJ_Cable : public PhysicsObject{
         std::vector<CablePoint> points;
     
         static inline constexpr int VARIANT_COUNT=6;
+        static int variantCounter;
     private:
         bool hasBeenCreated=false;
         int cableVariant;

@@ -96,6 +96,17 @@ Renderer::~Renderer(){
 
 //draws a model with a given transform without modifying it. great for models that get reused
 void Renderer::drawModelAt(Model& model, Vec3 position, Vec3 rotation, Vec3 scale,int textureID,Vec4 tint){
+    Vec3 usedScale=scale;
+    if(invertY){
+        usedScale.y*=-1.0f;
+    }
+    Mat4 mat=Model::getTransformMatrix(position,rotation,usedScale);
+    Mat4 nmat=Model::getModelNormalMatrix(rotation);
+    drawModelWithMatrix(model,mat,nmat,textureID);
+
+}
+void Renderer::drawModelWithMatrix(Model &model, Mat4 &matrix,Mat4 &normalMatrix, int textureID)
+{
 
         auto& gl = openGLContext.extensions;
 
@@ -122,16 +133,13 @@ void Renderer::drawModelAt(Model& model, Vec3 position, Vec3 rotation, Vec3 scal
         }
         
 
-        Vec3 usedScale=scale;
-        if(invertY){
-            usedScale.y*=-1.0f;
-        }
-        shaderProgram->setUniformMat4("uModelMatrix", Model::getTransformMatrix(position,rotation,usedScale), 1, juce::gl::GL_FALSE);
-        shaderProgram->setUniformMat4("uModelNormal", Model::getModelNormalMatrix(rotation), 1, juce::gl::GL_FALSE);
+
+        shaderProgram->setUniformMat4("uModelMatrix",matrix.data, 1, juce::gl::GL_FALSE);
+        shaderProgram->setUniformMat4("uModelNormal", normalMatrix.data, 1, juce::gl::GL_FALSE);
         
         shaderProgram->setUniform("uTextureID",textureID);
         
-        shaderProgram->setUniform("uTintColor",tint.x,tint.y,tint.z,tint.w);
+        shaderProgram->setUniform("uTintColor",1.0f,1.0f,1.0f,1.0f);
         // Draw arrays instead of elements
         juce::gl::glDrawArrays(juce::gl::GL_TRIANGLES, 0, model.vertexCount);
 
@@ -141,8 +149,9 @@ void Renderer::drawModelAt(Model& model, Vec3 position, Vec3 rotation, Vec3 scal
         gl.glDisableVertexAttribArray(3);
         gl.glDisableVertexAttribArray(4);
 }
-void Renderer::drawModel(Model& model){
-    drawModelAt(model,model.position,model.rotation,model.scale);    
+void Renderer::drawModel(Model &model)
+{
+    drawModelAt(model,model.position,model.rotation,model.scale);
 }
 
 //ui related ones

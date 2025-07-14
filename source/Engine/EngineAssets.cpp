@@ -44,7 +44,7 @@ namespace EngineAssets{
         //cable settings
         const int cableModelGroups=16;
         const int cableResolution = 6; //cables will be hexagons
-        const float cableRadius = 0.25f;
+        const float cableRadius = 0.15f;
 
         for(uint8_t i=1;i<cableModelGroups;i++){
             for(int r=0;r<cableResolution;r++){

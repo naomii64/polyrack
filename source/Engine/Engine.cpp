@@ -36,15 +36,20 @@ void Engine::init(){
     scene = &static_cast<OBJ_Scene&>(*objects.emplace_back(std::make_unique<OBJ_Scene>()));
 
     //test stuff
-    auto& newObj = static_cast<POBJ_Cable&>(*objects.emplace_back(std::make_unique<POBJ_Cable>()));
-    physicsObjects.push_back(&newObj);
-    int cablePoints=16;
-    newObj.desiredDistance=0.5f;
-    newObj.createCable(cablePoints,Vec3(0.0f),Vec3(4.0f));
+    //create a bunch of cables
+    for(int i=0;i<10;i++){
+        auto& newObj = static_cast<POBJ_Cable&>(*objects.emplace_back(std::make_unique<POBJ_Cable>()));
+        physicsObjects.push_back(&newObj);
+        int cablePoints=16;
+        newObj.desiredDistance=1.0f;
+        newObj.createCable(cablePoints,Vec3(0.0f),Vec3(4.0f));
+        
+        newObj.points[0].position={float(i),0.0f,0.0f};
 
-    //attatch the test object to the scene object
-    scene->children.push_back(&newObj);
-    newObj.parent=scene;
+        //attatch the test object to the scene object
+        scene->children.push_back(&newObj);
+        newObj.parent=scene;
+    }
 }
 void Engine::draw(){
     if(scene==nullptr)return;

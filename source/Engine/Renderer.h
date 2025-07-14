@@ -36,6 +36,12 @@ public:
 		int textureID=0,
 		Vec4 tint = {1.0f,1.0f,1.0f,1.0f}
 	);
+	void drawModelWithMatrix(
+		Model& model, 
+		Mat4& matrix,
+		Mat4 &normalMatrix=Mat4(),
+		int textureID=0
+	);
 	void resizeBuffer(unsigned int newWidth,unsigned int newHeight);
 	void createTextureFromImage(const juce::Image& image);
 	//drawing functions for ui

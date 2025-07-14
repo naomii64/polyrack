@@ -26,6 +26,7 @@ void Object::onDraw(){}
 void PhysicsObject::physicsTick(float delta) {}
 
 //subclasses
+int POBJ_Cable::variantCounter=0;
 void POBJ_Cable::physicsTick(float delta){
     if(!hasBeenCreated)return;
     //apply gravity and momentum
@@ -104,14 +105,20 @@ void POBJ_Cable::physicsTick(float delta){
         float pitch = std::atan2(-fwd.y, std::sqrt(fwd.x * fwd.x + fwd.z * fwd.z)); // rotation around X
         float yaw   = std::atan2(fwd.x, fwd.z); // rotation around Y
         float roll=0.0f;
-        if(dir.z<0){
-            roll=juce::MathConstants<float>::pi;
-        }
 
         pointA.rotation = { pitch, yaw, roll }; // roll = 0
     }
-
     points.back().rotation=points[points.size()-2].rotation;
+
+    //finally calculate the matrices
+    for(CablePoint& point : points){
+        //order is handled differently for cables
+        Mat4 rotX = Mat4::rotationX(point.rotation.x);
+        Mat4 rotY = Mat4::rotationY(point.rotation.y);
+        Mat4 rotZ = Mat4::rotationZ(point.rotation.z);
+        Mat4 rotationMatrix = rotY * rotX * rotZ;
+        point.matrix=Mat4::translation(point.position)*rotationMatrix;
+    }
 }
 void POBJ_Cable::createCable(int pointCount,Vec3 start,Vec3 end){
     hasBeenCreated=true;
@@ -128,7 +135,7 @@ void POBJ_Cable::createCable(int pointCount,Vec3 start,Vec3 end){
 
     //===CABLE VARIANT===//
     //pick a random variant for the cable to use
-    cableVariant=rand() % POBJ_Cable::VARIANT_COUNT;
+    cableVariant=POBJ_Cable::variantCounter++ % POBJ_Cable::VARIANT_COUNT;
     //create texture matrix from the variant
     cableTextureMatrix=Mat3::scaling(1.0f/float(POBJ_Cable::VARIANT_COUNT),1.0f)*Mat3::translation(float(cableVariant),0.0f);
 
@@ -140,14 +147,9 @@ void POBJ_Cable::onDraw(){
     matrices.push_back(Mat4());
     //main cable model
     for(CablePoint& point : points){
-
-        //order is handled differently for cables
-        Mat4 rotX = Mat4::rotationX(point.rotation.x);
-        Mat4 rotY = Mat4::rotationY(point.rotation.y);
-        Mat4 rotZ = Mat4::rotationZ(point.rotation.z);
-
-        Mat4 rotationMatrix = rotY * rotX * rotZ;
-        matrices.push_back(Mat4::translation(point.position)*rotationMatrix);
+        Mat4& matrix=point.matrix;
+        matrices.push_back(matrix);
+        //Engine::renderer->drawModelWithMatrix(EngineAssets::mAxis,matrix,Mat4(),EngineAssets::tAxis);    
     }
 
     Engine::renderer->setUVMatrix(cableTextureMatrix);
@@ -157,4 +159,22 @@ void POBJ_Cable::onDraw(){
 
     //reset the matrix. will probably restructure this to speed it up later so it doesnt reset every time
     Engine::renderer->setUVMatrix(Mat3());
+
+    //draw cable ends
+    //move these later
+    //or might just change to be handled better in the future instead of using matrices
+    Mat4 rotateStart={
+        1.0f,0.0,0.0,0.0,
+        0.0f,0.0,1.0,0.0,
+        0.0f,-1.0,0.0,0.0,
+        0.0f,0.0,0.0,1.0
+    };
+    Mat4 rotateEnd={
+        -1.0f,0.0,0.0,0.0,
+        0.0f,0.0,1.0,0.0,
+        0.0f,1.0,0.0,0.0,
+        0.0f,0.0,0.0,1.0
+    };
+    Engine::renderer->drawModelWithMatrix(EngineAssets::mCableEnd,points[0].matrix*rotateStart,Mat4(),EngineAssets::tRack);
+    Engine::renderer->drawModelWithMatrix(EngineAssets::mCableEnd,points.back().matrix*rotateEnd,Mat4(),EngineAssets::tRack);
 }
