@@ -1,7 +1,7 @@
 #pragma once
 #include "TextManager.h"
-#define DEBUG_MODE true
-#define DEBUG_EACH_CHAR true
+#define DEBUG_MODE false
+#define DEBUG_EACH_CHAR false
 
 namespace TextManager{
     //5 eigths

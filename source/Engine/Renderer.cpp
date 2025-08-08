@@ -8,14 +8,14 @@
 
 #define USE_FRAME_BUFFER false
 
-#define DEBUG_MODE true
-
 #include "../Defines.h"
 #if draw_hitboxes
 #include "Hitboxes.h"
 #endif
 
 #include "../shaders/shaders.h"
+
+#pragma warning( disable : 4100)
 
 const char* fullscreenVertexShader = R"(
     #version 330 core
@@ -204,7 +204,7 @@ void Renderer::uploadMatrixList(std::vector<Mat4>& matrices)
         return;
     }
 
-    const int matrixCount = matrices.size();
+    const int matrixCount = int(matrices.size());
     //const int floatLength = matrixCount * 16;
     GLfloat data[17 * 16]; //there are 17 matrices
 
@@ -400,18 +400,12 @@ void Renderer::createTextureRectsFromAtlas(TextureManager& atlas){
         return;
     }
     std::vector<Vec4>& textureRects = atlas.textureCoords;
-    #if DEBUG_MODE
-        std::cout << "loading "<< textureRects.size() << " texture coordinates" << std::endl;
-        Vec4::debugVector(textureRects);
-    #endif
-
-
     //for now the glFloat holds a max of 64 textures for now
     const int floatLength = 64*4;
     GLfloat data[floatLength];
     //fill the data in
     // 2. Flatten the Vec4 list into a float array
-    const int textureCount = textureRects.size();
+    const int textureCount = int(textureRects.size());
     for(int i=0;i<textureCount;i++){
         Vec4& currentTextureRect = textureRects[i];
         int ix4=i*4;
@@ -513,5 +507,5 @@ void Renderer::createTextureFromImage(const juce::Image& image)
     juce::gl::glBindTexture(juce::gl::GL_TEXTURE_2D, 0);
 
     //debug out the texutre id
-    std::cout << "Texture ID = " << mainTexture.getTextureID() << std::endl;
+    //std::cout << "Texture ID = " << mainTexture.getTextureID() << std::endl;
 }

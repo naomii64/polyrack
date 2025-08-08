@@ -37,8 +37,8 @@ public:
 		Vec4 tint = {1.0f,1.0f,1.0f,1.0f}
 	);
 	void drawModelWithMatrix(
-		Model& model, 
-		Mat4& matrix,
+		Model &model, 
+		Mat4 &matrix,
 		Mat4 &normalMatrix=Mat4(),
 		int textureID=0
 	);
@@ -89,6 +89,17 @@ public:
 
 	void setCameraPosition(Vec3 position,Vec3 rotation={0.0f,0.0f,0.0f});
 	void uploadMatrixList(std::vector<Mat4>& matrices);
+
+	// //for typing and debugging
+    // bool keyPressed(const juce::KeyPress& key) override {
+    //     auto ch = key.getTextCharacter();
+
+    //     if (juce::CharacterFunctions::isPrintable (ch)) {
+    //         std::cout<<ch<<"\n";
+    //     }
+        
+    //     return true;
+    // }
 private:
 	// Create an OpenGLContext for this Component.
 	juce::String vertexShader;
@@ -97,12 +108,6 @@ private:
 
 	juce::OpenGLFrameBuffer lowResBuffer;
 	int screenResolutionY = 512;
-
-	//	screen sizes
-	//	---------------
-	//	2^7=128
-	//	2^8=256
-	//	2^9=512
 
 	void newOpenGLContextCreated() override;
 	void renderOpenGL() override;

@@ -159,8 +159,7 @@ void FileManager::loadModules(Renderer& renderer,TextureManager& textureAtlas) {
                     animationData.models.push_back(&moduleData.models[modelID]);
                     juce::var functionsVar = model.getProperty("functions", juce::var());
                     std::unique_ptr<AnimFunctionCollection>& funcs = animationData.animFunctions.emplace_back(std::make_unique<AnimFunctionCollection>());
-                    std::cout<<"function collection created\n";
-                    std::cout<<"attempting to set function properties...\n";
+                    //import all the functions here
                     funcs->x = functionsVar.getProperty("x","0").toString().toStdString();
                     funcs->y = functionsVar.getProperty("y","0").toString().toStdString();
                     funcs->z = functionsVar.getProperty("z","0").toString().toStdString();
@@ -170,7 +169,7 @@ void FileManager::loadModules(Renderer& renderer,TextureManager& textureAtlas) {
                     funcs->sx = functionsVar.getProperty("sx","0").toString().toStdString();
                     funcs->sy = functionsVar.getProperty("sy","0").toString().toStdString();
                     funcs->sz = functionsVar.getProperty("sz","0").toString().toStdString();
-                    std::cout<<"done!\n";
+
                     funcs->compileExpressions();
                 }
             }

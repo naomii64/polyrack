@@ -27,10 +27,9 @@ void InputComponent::init(const juce::var &obj, ModuleData &moduleData)
 void InputComponent::initInstance()
 {
     hitbox=&HitboxManager::createHitbox();
-    hitbox->onDrag=[this](Vec2 delta){
+    hitbox->onDrag=[this](Vec2 delta,Vec2 mousePos){
         //CONSTANT
         float sensitivity=0.005f;
-
         this->value+=delta*Vec2(1.0f,-1.0f)*sensitivity;
         this->value.x=std::max(this->value.x,0.0f);
         this->value.y=std::max(this->value.y,0.0f);

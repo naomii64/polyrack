@@ -26,4 +26,5 @@ namespace EngineAssets{
 
     void loadModel(Model& model, const juce::OpenGLContext& context, const juce::String& fileName);
     void loadAll(juce::OpenGLContext &openGLContext);
+    void createCableModel(juce::OpenGLContext &openGLContext);
 }

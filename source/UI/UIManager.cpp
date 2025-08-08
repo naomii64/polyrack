@@ -9,7 +9,7 @@ std::vector<std::vector<UIObject*>> UIManager::groups;
 int UIManager::moduleSelectionGroup=0;
 
 void UIManager::init(Renderer& renderer){
-    std::cout << "initializing ui..." <<    std::endl;
+    //std::cout << "initializing ui..." <<    std::endl;
     moduleSelectionGroup = newUIGroupID();
 
     //add a test button to module selection menu

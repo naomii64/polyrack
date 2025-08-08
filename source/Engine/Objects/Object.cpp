@@ -2,6 +2,7 @@
 #include "Object.h"
 #include "../Engine.h"
 #include "../EngineAssets.h"
+#include "../Hitboxes.h"
 
 Object::Object(){}
 Object::~Object(){}
@@ -27,9 +28,7 @@ void PhysicsObject::physicsTick(float delta) {}
 
 //subclasses
 int POBJ_Cable::variantCounter=0;
-void POBJ_Cable::physicsTick(float delta){
-    if(!hasBeenCreated)return;
-    //apply gravity and momentum
+void POBJ_Cable::applyGravityAndMomentum(float delta){
     for(CablePoint& point : points){
         if(point.fixed){
             point.previousPosition=point.position;
@@ -41,9 +40,8 @@ void POBJ_Cable::physicsTick(float delta){
 
         point.previousPosition=copyPos;
     }
-    
-    //apply constraints
-    //probably move this later
+}
+void POBJ_Cable::applyConstraints(){
     const int ITERATION_COUNT=10;
     for(int iteration=0;iteration<ITERATION_COUNT;iteration++){
         for(int i=1;i<points.size();i++){
@@ -90,8 +88,8 @@ void POBJ_Cable::physicsTick(float delta){
 
         }
     }
-
-    //calculate rotation
+}
+void POBJ_Cable::rotatePoints(){
     for (int i = 0; i < points.size() - 1; i++) {
         CablePoint& pointA = points[i];
         CablePoint& pointB = points[i + 1];
@@ -109,8 +107,8 @@ void POBJ_Cable::physicsTick(float delta){
         pointA.rotation = { pitch, yaw, roll }; // roll = 0
     }
     points.back().rotation=points[points.size()-2].rotation;
-
-    //finally calculate the matrices
+}
+void POBJ_Cable::calculateMatrices(){
     for(CablePoint& point : points){
         //order is handled differently for cables
         Mat4 rotX = Mat4::rotationX(point.rotation.x);
@@ -119,6 +117,25 @@ void POBJ_Cable::physicsTick(float delta){
         Mat4 rotationMatrix = rotY * rotX * rotZ;
         point.matrix=Mat4::translation(point.position)*rotationMatrix;
     }
+}
+void POBJ_Cable::moveHitboxes(){
+    Hitbox& hitboxA = HitboxManager::hitboxes[hitboxAID];
+    Hitbox& hitboxB = HitboxManager::hitboxes[hitboxBID];
+
+    CablePoint& pointA = points[0];
+    CablePoint& pointB = points.back();
+
+    hitboxA.position=pointA.position;
+    hitboxB.position=pointB.position;
+}
+
+void POBJ_Cable::physicsTick(float delta){
+    if(!hasBeenCreated)return;
+    applyGravityAndMomentum(delta);
+    applyConstraints();
+    rotatePoints();
+    calculateMatrices();
+    moveHitboxes();
 }
 void POBJ_Cable::createCable(int pointCount,Vec3 start,Vec3 end){
     hasBeenCreated=true;
@@ -129,17 +146,19 @@ void POBJ_Cable::createCable(int pointCount,Vec3 start,Vec3 end){
         points[i].position=currentPointPos;
         points[i].previousPosition=currentPointPos;
     }
+
+    //create and assign hitboxes
+    hitboxAID = createPointHitbox(points[0]);
+    hitboxBID = createPointHitbox(points.back());
+    
     //THIS IS PROBABLY JUST TEMPORARY
     points[0].fixed=true;
-
-
+    
     //===CABLE VARIANT===//
-    //pick a random variant for the cable to use
     cableVariant=POBJ_Cable::variantCounter++ % POBJ_Cable::VARIANT_COUNT;
-    //create texture matrix from the variant
     cableTextureMatrix=Mat3::scaling(1.0f/float(POBJ_Cable::VARIANT_COUNT),1.0f)*Mat3::translation(float(cableVariant),0.0f);
-
 }
+
 void POBJ_Cable::onDraw(){
     std::vector<Mat4> matrices;
     matrices.reserve(points.size()+1);
@@ -177,4 +196,38 @@ void POBJ_Cable::onDraw(){
     };
     Engine::renderer->drawModelWithMatrix(EngineAssets::mCableEnd,points[0].matrix*rotateStart,Mat4(),EngineAssets::tRack);
     Engine::renderer->drawModelWithMatrix(EngineAssets::mCableEnd,points.back().matrix*rotateEnd,Mat4(),EngineAssets::tRack);
+}
+
+int POBJ_Cable::createPointHitbox(CablePoint& point)
+{
+    int hitboxID = HitboxManager::createHitboxID();
+    Hitbox& hitbox = HitboxManager::hitboxes[hitboxID];
+    
+    const float hitboxSize = 0.5f;
+    hitbox.bounds = Vec3(hitboxSize);
+    
+    CablePoint* pointPtr = &point;
+    hitbox.mouseDown=[pointPtr]{
+        pointPtr->fixed=true;
+    };
+    hitbox.mouseUp=[pointPtr]{
+        pointPtr->fixed=false;
+    };
+    hitbox.onDrag=[pointPtr](Vec2 delta,Vec2 mousePos){
+        const float zIntersectValue = 0.0f;
+        //calculate where it intersects the given z value
+
+        Ray mousePosRay = Engine::renderer->rayFrom(mousePos);        
+        Vec3 targetPosition = mousePosRay.direction;
+        
+        //find the difference
+        float difference = zIntersectValue-mousePosRay.origin.z;
+        
+        targetPosition/=targetPosition.z;
+        targetPosition*=difference;
+
+        pointPtr->position=mousePosRay.origin+targetPosition;
+    };
+
+    return hitboxID;
 }

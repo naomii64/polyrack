@@ -34,7 +34,7 @@ void main()
     shadowColor*=shadowColor;
 
     shadowColor.a=1.0;
-    FragColor = shadowColor*texColor*uTintColor;
+    FragColor = /*shadowColor**/texColor*uTintColor;
 
     //FragColor=round(FragColor*8.0)/8.0;
 }

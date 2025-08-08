@@ -1,6 +1,11 @@
 #pragma once
 #include "../Includes/DataTypes.h"
 #include <vector>
+
+//forward declarations
+struct Hitbox;
+
+
 class Object{
     public:
         //constructors
@@ -41,19 +46,32 @@ struct CablePoint{
 };
 class POBJ_Cable : public PhysicsObject{
     public:
+        //overrides
         void physicsTick(float delta) override;
+        void onDraw() override;
+        
         void createCable(int pointCount,Vec3 start={0.0f,0.0f,0.0f},Vec3 end={0.0f,0.0f,0.0f});
         
-        void onDraw() override;
-        //cable settings
-        float desiredDistance;
+        //Creates a hitbox for the corresponding point and returns the hitbox ID
+        int createPointHitbox(CablePoint& point);
 
-        std::vector<CablePoint> points;
-    
+        // cable settings
+        float desiredDistance;
+        //data
+        std::vector<CablePoint> points;    
+        int hitboxAID;
+        int hitboxBID;
+
         static inline constexpr int VARIANT_COUNT=6;
         static int variantCounter;
     private:
         bool hasBeenCreated=false;
         int cableVariant;
         Mat3 cableTextureMatrix;
+        //separate physics into steps for readability
+        void applyGravityAndMomentum(float delta);
+        void applyConstraints();
+        void rotatePoints();
+        void calculateMatrices();
+        void moveHitboxes();
 };

@@ -11,8 +11,13 @@ Hitbox* HitboxManager::selectedHitbox=nullptr;
 
 Hitbox &HitboxManager::createHitbox()
 {
-    std::cout << "creating hitbox" <<std::endl;
     return hitboxes.emplace_back();
+}
+
+int HitboxManager::createHitboxID()
+{
+    hitboxes.emplace_back();
+    return int(hitboxes.size())-1;
 }
 
 void HitboxManager::click(Renderer &renderer, juce::MouseEvent event)
@@ -47,18 +52,19 @@ void HitboxManager::click(Renderer &renderer, juce::MouseEvent event)
     if(finalHitBox!=nullptr){
         //if a hitbox was clicked then 
         selectedHitbox=finalHitBox;
+        if(selectedHitbox->mouseDown) selectedHitbox->mouseDown();
     }
 }
 void HitboxManager::mouseUp(juce::MouseEvent event)
 {
+    if(!selectedHitbox) return;
+    if(selectedHitbox->mouseUp) selectedHitbox->mouseUp();
     selectedHitbox=nullptr;
 }
-void HitboxManager::dragHitbox(Vec2 delta)
+void HitboxManager::dragHitbox(Vec2 delta,Vec2 mousePos)
 {
-    if(selectedHitbox==nullptr){return;}
-    if(selectedHitbox->onDrag){
-        selectedHitbox->onDrag(delta);
-    }
+    if(selectedHitbox==nullptr) return;
+    if(selectedHitbox->onDrag) selectedHitbox->onDrag(delta,mousePos);
 }
 
 #if draw_hitboxes

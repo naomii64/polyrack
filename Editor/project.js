@@ -6,3 +6,4 @@ project.name='new module';
 project.description='';
 project.tags=[];
 project.layout={};
+project.ID = '[project id]';

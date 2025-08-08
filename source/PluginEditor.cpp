@@ -3,8 +3,15 @@
 #include "PluginEditor.h"
 #include "Engine/Scene.h"
 
+
+
 //for debug
+#define DEBUG_CONSOLE_ENABLED true
+
 #include <iostream>
+#if DEBUG_CONSOLE_ENABLED
+#include "DebugConsole.h"
+#endif
 
 void printImagePixels(const juce::Image& image, int count = 10)
 {
@@ -46,6 +53,7 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
 
     //mouse tracking
     mainRenderer.addMouseListener(this, true); 
+    
     setResizable(true,true);
     setSize (900, 900);
 
@@ -81,6 +89,10 @@ void AudioPluginAudioProcessorEditor::onRendererLoad(){
     mainRenderer.mainTextureAtlas = &textureAtlas;
 
     mainRenderer.setCameraPosition({0.0f,0.0f,10.0f});
+
+    #if DEBUG_CONSOLE_ENABLED
+    Debugger::start();
+    #endif
 }
 
 //========INPUT========//
@@ -90,7 +102,7 @@ void AudioPluginAudioProcessorEditor::updateMouse(const juce::MouseEvent& event)
     Vec2 position = Vec2(event.position.x, event.position.y);
     Scene::mousePos=position;
     UIManager::updateMousePos(mainRenderer, position);
-    HitboxManager::dragHitbox(position - previousMousePos);
+    HitboxManager::dragHitbox(position - previousMousePos,position);
 
     previousMousePos = position;
 }
@@ -109,7 +121,8 @@ void AudioPluginAudioProcessorEditor::mouseWheelMove(const juce::MouseEvent &eve
 void AudioPluginAudioProcessorEditor::mouseDown(const juce::MouseEvent& event) {
     if (event.mods.isRightButtonDown()) {
         // Right mouse button was clicked
-        UIManager::showGroup(UIManager::moduleSelectionGroup);
+        //TODO: redo ui
+        //UIManager::showGroup(UIManager::moduleSelectionGroup);
     }
     if (event.mods.isLeftButtonDown()) {
         // Right mouse button was clicked

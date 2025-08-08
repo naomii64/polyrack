@@ -6,8 +6,6 @@
 #include "Vertex.h"
 #include <vector>
 
-#define DEBUG_MODE true
-
 class Model {
 public:
     // OpenGL buffer and vertex count
@@ -27,10 +25,6 @@ public:
     void createGeometry(juce::OpenGLContext& openGLContext, const std::vector<Vertex>& vertexBuffer, const std::vector<uint8_t>& groupBuffer = {}) {
         auto& gl = openGLContext.extensions;
         
-        #if DEBUG_MODE
-            std::cout << "generating model of " << vertexBuffer.size() << " vertices" << std::endl;
-        #endif
-
         if (vbo == 0) gl.glGenBuffers(1, &vbo);
 
         gl.glBindBuffer(juce::gl::GL_ARRAY_BUFFER, vbo);
@@ -41,9 +35,6 @@ public:
 
         // If group buffer is provided
         if (!groupBuffer.empty()) {
-            #if DEBUG_MODE
-                std::cout << "creating groupids" << std::endl;
-            #endif
 
             if (groupVBO == 0) gl.glGenBuffers(1, &groupVBO);
             gl.glBindBuffer(juce::gl::GL_ARRAY_BUFFER, groupVBO);
@@ -53,12 +44,6 @@ public:
         } else {
             hasGroupBuffer = false;
         }
-
-        #if DEBUG_MODE
-            std::cout << "done!" << std::endl;
-        #endif
-
-
     }
     // Transform data
 	Vec3 position{ 0.0f, 0.0f, 0.0f };

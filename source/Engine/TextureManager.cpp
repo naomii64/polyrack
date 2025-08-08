@@ -2,8 +2,6 @@
 #include "TextureManager.h"
 #include <algorithm>
 
-#define DEBUG_MODE true
-
 TextureManager::TextureManager(){}
 TextureManager::~TextureManager(){}
 
@@ -12,12 +10,6 @@ int TextureManager::addTexture(juce::Image& image){
     return textures.size();
 }
 juce::Image TextureManager::getTextureSheet() {
-    #if DEBUG_MODE
-        #define LINE "========================"
-
-        std::cout << std::endl << LINE << "TextureManager::getTextureSheet" << LINE << std::endl;
-        #undef LINE
-    #endif
 
     int atlasWidth = 0;
     int atlasHeight = 0;
@@ -38,11 +30,6 @@ juce::Image TextureManager::getTextureSheet() {
     const float scaleFactorX=1.0f/atlas.getWidth();
     const float scaleFactorY=1.0f/atlas.getHeight();
     const Vec4 scaleVector(scaleFactorX,scaleFactorY,scaleFactorX,scaleFactorY);
-
-    #if DEBUG_MODE
-        std::cout << "Generating texture atlas for " << textures.size() << " textures..." << std::endl;
-        std::cout << "uvs:" << std::endl;
-    #endif
 
     //reset the texture coord vector
     textureCoords.clear();
@@ -71,13 +58,7 @@ juce::Image TextureManager::getTextureSheet() {
         textureCoords.emplace_back(newUV);
         currentY+=texture.getHeight();
 
-        #if DEBUG_MODE
-            std::cout <<"\t"<< newUV.toString() << std::endl;
-        #endif
     }
-    #if DEBUG_MODE
-        std::cout << textureCoords.size() << " uvs were added" << std::endl;
-    #endif
     
     return atlas;
 }

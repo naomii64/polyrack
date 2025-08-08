@@ -27,5 +27,5 @@ class Engine{
         static double previousSeconds;
         //Engine deltatime
         static double deltaTime;
-        static inline const Vec3 GRAVITY={0.0f,-9.8f,0.0f};
+        static inline const Vec3 GRAVITY={0.0f,-98.0f,0.0f};
 };

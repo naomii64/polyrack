@@ -37,6 +37,10 @@ namespace EngineAssets{
         loadModel(mWireCube,openGLContext,"wireFrameCube.obj");
         loadModel(mAxis,openGLContext,"axis.obj");
 
+        createCableModel(openGLContext);
+    }
+    void createCableModel(juce::OpenGLContext &openGLContext)
+    {
         //generate the model for cables
         std::vector<Vertex> cableVertices;
         std::vector<uint8_t> cableGroups;
@@ -46,6 +50,11 @@ namespace EngineAssets{
         const int cableResolution = 6; //cables will be hexagons
         const float cableRadius = 0.15f;
 
+        //amount to spread uvs into: 3 would mean each face has a third of the uv
+        const int uvSpread = 2;
+        const float uvSpreadWidth = 1.0f/float(uvSpread);
+
+        int uvSpreadIndex = 0;
         for(uint8_t i=1;i<cableModelGroups;i++){
             for(int r=0;r<cableResolution;r++){
                 float rPercent = float(r)/(float(cableResolution));
@@ -66,33 +75,37 @@ namespace EngineAssets{
                 #define POS1 {x,y,0.0f}
                 #define POS2 {nextx,nexty,0.0f}
 
+                Vec4 uv;
+                float uvStart = float(uvSpreadIndex)*uvSpreadWidth;
+                uv = {uvStart,0.0f,uvStart+uvSpreadWidth,1.0f};
+
                 int group_UL = i;
                 Vertex Vert_UL = {
                     POS1,
                     POS1,
                     COLOR,
-                    {0.0f,0.0f}
+                    {uv.x,uv.y}
                 };
                 int group_UR = i;
                 Vertex Vert_UR = {
                     POS2,
                     POS2,
                     COLOR,
-                    {1.0f,0.0f}
+                    {uv.z,uv.y}
                 };
                 int group_DR = i+1;
                 Vertex Vert_DR = {
                     POS2,
                     POS2,
                     COLOR,
-                    {1.0f,1.0f}
+                    {uv.z,uv.w}
                 };
                 int group_DL = i+1;
                 Vertex Vert_DL = {
                     POS1,
                     POS1,
                     COLOR,
-                    {0.0f,1.0f}
+                    {uv.x,uv.w}
                 };
                 //add the defined vertices to the vector
                 cableVertices.push_back(Vert_UL);
@@ -112,7 +125,11 @@ namespace EngineAssets{
 
                 cableVertices.push_back(Vert_DL);
                 cableGroups.push_back(group_DL);
-             
+                
+                uvSpreadIndex++;
+                if(uvSpreadIndex>=uvSpread){
+                    uvSpreadIndex=0;
+                }
             }
             #undef COLOR
             #undef POS1

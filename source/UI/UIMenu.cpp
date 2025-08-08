@@ -9,7 +9,6 @@ void UIMenu::draw(Renderer& renderer){
     }
 }
 UIObject& UIMenu::addObject(){
-    std::cout << "UI OBJECT ADDED!" << std::endl;
     return uiObjects.emplace_back();
 }
 
