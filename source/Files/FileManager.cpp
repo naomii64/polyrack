@@ -1,7 +1,9 @@
 #pragma once
 #include "FileManager.h"
 
-#define DEBUG_MODULE_FILES false
+
+//to import readvec3fromobj
+#include "../Engine/Objects/Object.h"
 
 //fileManager Variables
 juce::File FileManager::appDataFolder;
@@ -48,9 +50,9 @@ void FileManager::init() {
     verifyFolder(assetFolder);
 
     //log the file paths
-    std::cout << "Plugin folder: " << appDataFolder.getFullPathName() << std::endl;
-    std::cout << "Module folder: " << moduleFolder.getFullPathName() << std::endl;
-    std::cout << "Assets folder: " << assetFolder.getFullPathName() << std::endl;
+    //std::cout << "Plugin folder: " << appDataFolder.getFullPathName() << std::endl;
+    //std::cout << "Module folder: " << moduleFolder.getFullPathName() << std::endl;
+    //std::cout << "Assets folder: " << assetFolder.getFullPathName() << std::endl;
 }
 void FileManager::loadModules(Renderer& renderer,TextureManager& textureAtlas) {
    
@@ -59,133 +61,100 @@ void FileManager::loadModules(Renderer& renderer,TextureManager& textureAtlas) {
     {
         const auto& fileName = file.getFileName();
         const auto& extension = file.getFileExtension();
-
         //ignore non module extensions
-        if(!(extension==".zip"||extension==".plk")){continue;}
+        if(!(extension==".zip"||extension==".plk")) continue;
         //start reading the data
         juce::ZipFile zipFile(file);
         //get the main module file
         const auto& mainJSON = zipFile.getEntry("module.json");
         juce::String jsonText = "";
-        if (mainJSON != nullptr)
-        {
-            jsonText = readZipEntryAsString(&zipFile,mainJSON);
 
-            juce::var parsed = juce::JSON::parse(jsonText);
+        if (mainJSON == nullptr) continue;
+        
+        jsonText = readZipEntryAsString(&zipFile,mainJSON);
+
+        juce::var parsed = juce::JSON::parse(jsonText);
             
-            //module data to save
-            juce::String moduleFilePath=file.getFullPathName();
-            juce::String moduleName=parsed.getProperty("name",  "[MISSING]");
-            juce::String moduleDesc=parsed.getProperty("description",  "[MISSING]");
-            juce::var moduleLayout = parsed["layout"].getObject();
-            //arrays
-            juce::Array<juce::var>* moduleTags = parsed["tags"].getArray();
-            juce::Array<juce::var>* moduleTextures = parsed["textures"].getArray();
-            juce::Array<juce::var>* moduleModels = parsed["models"].getArray();
-            juce::Array<juce::var>* moduleAnimations = parsed["animations"].getArray();
-            juce::Array<juce::var>* layoutComponents = moduleLayout["components"].getArray();
-
-            #if DEBUG_MODULE_FILES
-            std::cout << "registering module " << fileName << ":" << std::endl;
-            std::cout <<"\tPath:\t" <<  moduleFilePath  << std::endl;
-            std::cout <<"\tName:\t" <<  moduleName  << std::endl;
-            std::cout <<"\tDesc:\t" <<  moduleDesc  << std::endl;
-            std::cout <<"\tTags:\t" <<  std::endl;
-            for (const juce::var& tag : *moduleTags){
-                std::cout <<"\t\t"<< tag.toString() <<std::endl;
-            }
-            #endif
+        //module data to save
+        juce::String moduleFilePath=file.getFullPathName();
+        juce::String moduleName=parsed.getProperty("name",  "[MISSING]");
+        juce::String moduleDesc=parsed.getProperty("description",  "[MISSING]");
+        juce::var moduleLayout = parsed["layout"].getObject();
+        //arrays
+        juce::Array<juce::var>* moduleTags = parsed["tags"].getArray();
+        juce::Array<juce::var>* moduleTextures = parsed["textures"].getArray();
+        juce::Array<juce::var>* moduleModels = parsed["models"].getArray();
+        juce::Array<juce::var>* moduleAnimations = parsed["animations"].getArray();
+        juce::Array<juce::var>* layoutComponents = moduleLayout["components"].getArray();
             
-            //actually register the module nowww
-            ModuleData& moduleData = ModuleManager::addModule();
-            moduleData.name=moduleName.toStdString();
-            moduleData.description=moduleDesc.toStdString();
-            
-            #if DEBUG_MODULE_FILES
-            std::cout <<"\tTextures:\t" <<  std::endl;
-            #endif
+        //actually register the module nowww
+        ModuleData& moduleData = ModuleManager::addModule();
+        moduleData.name=moduleName.toStdString();
+        moduleData.description=moduleDesc.toStdString();
+        moduleData.layout = *layoutComponents;
+        moduleData.width=moduleLayout.getProperty("width",1);
+        moduleData.height=moduleLayout.getProperty("height",1);
 
-            std::vector<int> textureIDs;
-            //loop through the textures and initialize them idfk
-            for (const juce::var& texture : *moduleTextures){
-                juce::String texturePath = texture.getProperty("path", "[MISSING]");
-                const juce::ZipFile::ZipEntry* textureEntry = zipFile.getEntry(texturePath);
-                std::unique_ptr<juce::InputStream> stream(zipFile.createStreamForEntry(*textureEntry));
-                juce::Image textureImage = FileManager::readTextureStream(std::move(stream));
-                textureIDs.emplace_back(textureAtlas.addTexture(textureImage));
-
-                #if DEBUG_MODULE_FILES
-                std::cout <<"\t\tTexture:" <<  std::endl;
-                std::cout <<"\t\t\tpath: "<< texturePath <<std::endl;
-                #endif
-            }
-            
-            #if DEBUG_MODULE_FILES
-            std::cout <<"\tModels:\t" <<  std::endl;
-            #endif
-            //loop through the models tooooooo
-            for (const juce::var& model : *moduleModels){
-                juce::String modelPath = model.getProperty("path", "[MISSING]");
-                int textureIndex = static_cast<int>(model.getProperty("textureID", 0));
-                int modelTextureID = textureIDs[textureIndex];
-
-                const juce::ZipFile::ZipEntry* modelEntry = zipFile.getEntry(modelPath);
-                if (modelEntry != nullptr)
-                {
-                    std::unique_ptr<juce::InputStream> inputStream(zipFile.createStreamForEntry(*modelEntry));
-                    
-                    if (inputStream != nullptr)
-                    {
-                        juce::String fileContents = inputStream->readEntireStreamAsString();
-                        Model& model = moduleData.models.emplace_back();
-                        model.createGeometry(renderer.openGLContext,parseOBJString(fileContents.toStdString()));
-                        model.textureID=modelTextureID;
-                    }
-                }
-
-                #if DEBUG_MODULE_FILES
-                std::cout <<"\t\tModel:" <<  std::endl;
-                std::cout <<"\t\t\tpath: "<< modelPath <<std::endl;
-                #endif
-            }
-            //now load the animations
-            for(const juce::var& animation : *moduleAnimations){
-                Animation& animationData = moduleData.animations.emplace_back();
-                animationData.hitboxSize=readVec3FromObj(animation["hitboxSize"],Vec3(0.5f));
-                juce::Array<juce::var>* animationModels = animation["models"].getArray();
-                //for each model in the animation
-                for(const juce::var& model : *animationModels){
-                    int modelID = model.getProperty("modelID",0);
-                    animationData.models.push_back(&moduleData.models[modelID]);
-                    juce::var functionsVar = model.getProperty("functions", juce::var());
-                    std::unique_ptr<AnimFunctionCollection>& funcs = animationData.animFunctions.emplace_back(std::make_unique<AnimFunctionCollection>());
-                    //import all the functions here
-                    funcs->x = functionsVar.getProperty("x","0").toString().toStdString();
-                    funcs->y = functionsVar.getProperty("y","0").toString().toStdString();
-                    funcs->z = functionsVar.getProperty("z","0").toString().toStdString();
-                    funcs->rx = functionsVar.getProperty("rx","0").toString().toStdString();
-                    funcs->ry = functionsVar.getProperty("ry","0").toString().toStdString();
-                    funcs->rz = functionsVar.getProperty("rz","0").toString().toStdString();
-                    funcs->sx = functionsVar.getProperty("sx","0").toString().toStdString();
-                    funcs->sy = functionsVar.getProperty("sy","0").toString().toStdString();
-                    funcs->sz = functionsVar.getProperty("sz","0").toString().toStdString();
-
-                    funcs->compileExpressions();
-                }
-            }
-
-
-            //heres where the layout will be loaded
-            for (const juce::var& var : *layoutComponents){
-                moduleData.components.push_back(componentFromJSONObject(var,moduleData));
-            }
-        }else{
-            #if DEBUG_MODULE_FILES
-            std::cout << "NO MODULE.JSON FOUND!!" << std::endl;
-            #endif
-
-            continue;
+        std::vector<int> textureIDs;
+        //loop through the textures and initialize them
+        for (const juce::var& texture : *moduleTextures){
+            juce::String texturePath = texture.getProperty("path", "[MISSING]");
+            const juce::ZipFile::ZipEntry* textureEntry = zipFile.getEntry(texturePath);
+            std::unique_ptr<juce::InputStream> stream(zipFile.createStreamForEntry(*textureEntry));
+            juce::Image textureImage = FileManager::readTextureStream(std::move(stream));
+            int textureID = textureAtlas.addTexture(textureImage);
+            textureIDs.emplace_back(textureID);
         }
+        //loop through the models tooooooo
+        for (const juce::var& model : *moduleModels){
+            juce::String modelPath = model.getProperty("path", "[MISSING]");
+            int textureIndex = static_cast<int>(model.getProperty("textureID", 0));
+            int modelTextureID = textureIDs[textureIndex];
+
+            const juce::ZipFile::ZipEntry* modelEntry = zipFile.getEntry(modelPath);
+            if (modelEntry != nullptr)
+            {
+                std::unique_ptr<juce::InputStream> inputStream(zipFile.createStreamForEntry(*modelEntry));
+                    
+                if (inputStream != nullptr)
+                {
+                    juce::String fileContents = inputStream->readEntireStreamAsString();
+                    Model& model = moduleData.models.emplace_back();
+                    model.createGeometry(renderer.openGLContext,parseOBJString(fileContents.toStdString()));
+                    model.textureID=modelTextureID;
+                }
+            }
+        }
+        //now load the animations
+        for(const juce::var& animation : *moduleAnimations){
+            Animation& animationData = moduleData.animations.emplace_back();
+            animationData.hitboxSize=readVec3FromObj(animation["hitboxSize"],Vec3(0.5f));
+            juce::Array<juce::var>* animationModels = animation["models"].getArray();
+            //for each model in the animation
+            for(const juce::var& model : *animationModels){
+                int modelID = model.getProperty("modelID",0);
+                animationData.models.push_back(&moduleData.models[modelID]);
+                juce::var functionsVar = model.getProperty("functions", juce::var());
+                std::unique_ptr<AnimFunctionCollection>& funcs = animationData.animFunctions.emplace_back(std::make_unique<AnimFunctionCollection>());
+                //import all the functions here
+                funcs->x = functionsVar.getProperty("x","0").toString().toStdString();
+                funcs->y = functionsVar.getProperty("y","0").toString().toStdString();
+                funcs->z = functionsVar.getProperty("z","0").toString().toStdString();
+                funcs->rx = functionsVar.getProperty("rx","0").toString().toStdString();
+                funcs->ry = functionsVar.getProperty("ry","0").toString().toStdString();
+                funcs->rz = functionsVar.getProperty("rz","0").toString().toStdString();
+                funcs->sx = functionsVar.getProperty("sx","0").toString().toStdString();
+                funcs->sy = functionsVar.getProperty("sy","0").toString().toStdString();
+                funcs->sz = functionsVar.getProperty("sz","0").toString().toStdString();
+
+                funcs->compileExpressions();
+            }
+        }
+
+        //heres where the layout will be loaded
+        //for (const juce::var& var : *layoutComponents){
+        //    moduleData.components.push_back(componentFromJSONObject(var,moduleData));
+        //}
     }
 }
 

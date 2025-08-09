@@ -349,10 +349,6 @@ void Renderer::renderOpenGL(){
 
     //draw all the instances of modules
     Engine::draw();
-    
-    //REMOVE THIS AFTER NEW RENDERING SYSTEM IS IMPLEMENTED
-    Scene::draw(*this);
-    
 
     #if draw_hitboxes
     HitboxManager::drawAllHitBoxes(*this);

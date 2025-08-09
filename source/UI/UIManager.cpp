@@ -46,8 +46,13 @@ void UIManager::init(Renderer& renderer){
         //increment i to keep track of the current module
         moduleButton.setText(renderer,moduleData.name);
 
-        moduleButton.onClick = [&moduleData] {
-            Scene::addModuleFromData(moduleData);        
+        ModuleData* moduleDataPtr = &moduleData;
+        moduleButton.onClick = [moduleDataPtr] {
+            
+            //replaced with new method of creating a model instance
+            //Scene::addModuleFromData(moduleData);        
+            
+            ModuleManager::loadModule(moduleDataPtr);
             UIManager::hideGroup(UIManager::moduleSelectionGroup);    
         };
 

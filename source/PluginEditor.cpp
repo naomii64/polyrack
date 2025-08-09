@@ -3,6 +3,7 @@
 #include "PluginEditor.h"
 #include "Engine/Scene.h"
 
+#include "Engine/Hitboxes.h"
 
 
 //for debug
@@ -122,7 +123,7 @@ void AudioPluginAudioProcessorEditor::mouseDown(const juce::MouseEvent& event) {
     if (event.mods.isRightButtonDown()) {
         // Right mouse button was clicked
         //TODO: redo ui
-        //UIManager::showGroup(UIManager::moduleSelectionGroup);
+        UIManager::showGroup(UIManager::moduleSelectionGroup);
     }
     if (event.mods.isLeftButtonDown()) {
         // Right mouse button was clicked

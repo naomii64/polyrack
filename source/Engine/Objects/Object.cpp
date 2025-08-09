@@ -3,6 +3,7 @@
 #include "../Engine.h"
 #include "../EngineAssets.h"
 #include "../Hitboxes.h"
+#include "../ModuleManager.h"
 
 Object::Object(){}
 Object::~Object(){}
@@ -15,15 +16,44 @@ void Object::updateMatrix(){
     for(Object* obj : children){
         obj->updateMatrix();
     }
+
+    matrixRecalculationRequested=false;
+    onTransformChange();
 }
 void Object::callDraw()
 {
+    if(matrixRecalculationRequested) updateMatrix();
     onDraw();
     for(Object* child : children){
         child->callDraw();
     }
 }
 void Object::onDraw(){}
+void Object::onTransformChange(){}
+
+void Object::setPosition(Vec3 newPosition)
+{
+    transform.position = newPosition;
+    matrixRecalculationRequested=true;
+}
+void Object::setScale(Vec3 newScale)
+{
+    transform.scale = newScale;
+    matrixRecalculationRequested=true;
+}
+void Object::setRotation(Vec3 newRotation)
+{
+    transform.rotation = newRotation;
+    matrixRecalculationRequested=true;
+}
+void Object::setTransform(Vec3 newPosition, Vec3 newRotation, Vec3 newScale)
+{
+    transform.position = newPosition;
+    transform.rotation = newRotation;
+    transform.scale = newScale;
+    matrixRecalculationRequested=true;
+}
+
 void PhysicsObject::physicsTick(float delta) {}
 
 //subclasses
@@ -230,4 +260,89 @@ int POBJ_Cable::createPointHitbox(CablePoint& point)
     };
 
     return hitboxID;
+}
+
+void OBJ_Module::createFrom(ModuleData *moduleData)
+{
+    width = moduleData->width;
+    height = moduleData->height;
+
+    mainHitboxID=HitboxManager::createHitboxID();
+    auto& hitbox = HitboxManager::hitboxes[mainHitboxID];
+    hitbox.bounds=Vec3(float(width),float(height),1.0f)*0.5f;
+
+    //TODO: FIX THIS LATERRRR
+    for (const juce::var& obj : moduleData->layout){
+        juce::String componentType = obj.getProperty("type", "[NONE]");
+        std::cout<<componentType<<"\n";
+
+        Object* component;
+        //MOVE ALL THIS STUFF TO FUNCTIONS LATER
+        if (componentType == "static mesh") {
+            auto& objRef = static_cast<OBJ_Comp_Mesh&>(*Engine::objects.emplace_back(std::make_unique<OBJ_Comp_Mesh>()));
+            component = &objRef;
+
+            int modelID = obj.getProperty("modelID",0);
+            objRef.model = &moduleData->models[modelID];
+        } else if (componentType == "socket") {
+            auto& objRef = static_cast<OBJ_Comp_Socket&>(*Engine::objects.emplace_back(std::make_unique<OBJ_Comp_Socket>()));
+            component = &objRef;
+        } else if (componentType == "input") {
+            auto& objRef = static_cast<OBJ_Comp_Input&>(*Engine::objects.emplace_back(std::make_unique<OBJ_Comp_Input>()));
+            component = &objRef;
+            OBJ_Comp_Input* objPtr = &objRef;
+
+            int animationID = obj.getProperty("animationID",0);
+            objRef.animation=&moduleData->animations[animationID];
+            
+            objRef.hitboxID=HitboxManager::createHitboxID();
+            Hitbox& hitbox = HitboxManager::hitboxes[objRef.hitboxID];
+            hitbox.bounds=objRef.animation->hitboxSize;
+
+            hitbox.onDrag = [objPtr](Vec2 delta,Vec2 mousePos){
+                const float sensitivity=0.005f;
+                objPtr->values+=delta*Vec2(1.0f,-1.0f)*sensitivity;
+                objPtr->values.x=std::max(objPtr->values.x,0.0f);
+                objPtr->values.y=std::max(objPtr->values.y,0.0f);
+                objPtr->values.x=std::min(objPtr->values.x,1.0f);
+                objPtr->values.y=std::min(objPtr->values.y,1.0f);
+            };
+        }else{
+            continue;
+        }
+
+        //read the values like position and stuff
+        Vec3 vPosition = readVec3FromObj(obj["position"]);
+        Vec3 vRotation = readVec3FromObj(obj["rotation"]);
+        Vec3 vScale = readVec3FromObj(obj["scale"], Vec3(1.0f));
+
+        component->setTransform(vPosition,vRotation,vScale);
+
+        children.push_back(component);
+    }
+}
+void OBJ_Module::onTransformChange(){
+    //update the hitbox position
+    auto& hitbox = HitboxManager::hitboxes[mainHitboxID];
+    hitbox.position=transform.position-(hitbox.bounds*Vec3{-1.0f,-1.0f,1.0f});
+}
+
+void OBJ_Comp_Mesh::onDraw()
+{
+    if (!model) return;
+    Engine::renderer->drawModelWithMatrix(*model,matrix,normalMatrix,model->textureID);
+}
+void OBJ_Comp_Socket::onDraw()
+{
+    Engine::renderer->drawModelWithMatrix(EngineAssets::mCablePort,matrix,normalMatrix,EngineAssets::tRack);
+}
+void OBJ_Comp_Input::onDraw()
+{
+    if(!animation) return;
+    animation->draw(values,*Engine::renderer,matrix);
+}
+void OBJ_Comp_Input::onTransformChange()
+{
+    auto& hitbox = HitboxManager::hitboxes[hitboxID];
+    hitbox.position=matrix.getTranslation();
 }

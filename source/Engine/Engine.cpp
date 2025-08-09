@@ -42,7 +42,7 @@ void Engine::init(){
         physicsObjects.push_back(&newObj);
         int cablePoints=16;
         newObj.desiredDistance=1.0f;
-        newObj.createCable(cablePoints,Vec3(0.0f),Vec3(4.0f));
+        newObj.createCable(cablePoints,Vec3(0.0f),Vec3(1.0f));
         
         newObj.points[0].position={float(i),0.0f,0.0f};
 

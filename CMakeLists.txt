@@ -79,7 +79,7 @@ target_sources(Polyrack
         source/Engine/TextureManager.cpp
         source/Engine/ModuleManager.cpp
         source/Engine/Scene.cpp
-        source/Engine/Components.cpp
+        #source/Engine/Components.cpp
         source/Engine/Hitboxes.cpp
         #files
         source/Files/FileManager.cpp

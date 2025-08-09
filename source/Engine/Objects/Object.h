@@ -14,6 +14,7 @@ class Object{
         //transforms
         Transform transform;
         Mat4 matrix;
+        Mat4 normalMatrix;
         //tree structure
         std::vector<Object*> children;
         Object* parent;
@@ -25,6 +26,16 @@ class Object{
         void callDraw();
         //where the actual drawing for the object itself should be done
         virtual void onDraw();
+
+        virtual void onTransformChange();
+
+        void setPosition(Vec3 newPosition);
+        void setScale(Vec3 newScale);
+        void setRotation(Vec3 newRotation);
+        void setTransform(Vec3 newPosition, Vec3 newRotation, Vec3 newScale);
+    private:
+        //so that matrixes are only recalculated once
+        bool matrixRecalculationRequested = true;
 };
 class PhysicsObject : public Object{
     public:
@@ -34,6 +45,42 @@ class PhysicsObject : public Object{
 //actual objects
 class OBJ_Scene : public Object{};
 
+struct ModuleData;
+class Model;
+struct Animation;
+
+class OBJ_Module : public Object{
+    public:
+        //initializes the module using a pointer to the data
+        void createFrom(ModuleData* moduleData);
+
+        int width;
+        int height;
+
+        int mainHitboxID;
+
+        void onTransformChange() override;
+};
+//components
+class OBJ_Component : public Object{};
+class OBJ_Comp_Mesh : public OBJ_Component{
+    public:
+        void onDraw() override;
+
+        Model* model;
+};
+class OBJ_Comp_Socket : public OBJ_Component{
+    public:
+        void onDraw() override;
+};
+class OBJ_Comp_Input : public OBJ_Component{
+    public:
+        void onDraw() override;
+        Animation* animation;
+        Vec2 values;
+        int hitboxID;
+        void onTransformChange() override;
+};
 //physics objects
 struct CablePoint{
     Vec3 position;
@@ -75,3 +122,18 @@ class POBJ_Cable : public PhysicsObject{
         void calculateMatrices();
         void moveHitboxes();
 };
+
+//unwrapping functions PROBABLY MOVE LATER
+inline float getArrayValueOr(const juce::Array<juce::var>* arr, int index, float defaultVal) {
+    if (arr != nullptr && index < arr->size())
+        return (float)arr->getUnchecked(index);
+    return defaultVal;
+}
+inline Vec3 readVec3FromObj(const juce::var& obj, Vec3 defaultValues = { 0.0f, 0.0f, 0.0f }) {
+    juce::Array<juce::var>* arr = obj.getArray();
+    return Vec3(
+        getArrayValueOr(arr, 0, defaultValues.x),
+        getArrayValueOr(arr, 1, defaultValues.y),
+        getArrayValueOr(arr, 2, defaultValues.z)
+    );
+}

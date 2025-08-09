@@ -75,21 +75,25 @@ struct Animation{
     std::vector<std::unique_ptr<AnimFunctionCollection>> animFunctions;
     Vec3 hitboxSize={1.0f,1.0f,1.0f};
     
-    void draw(const Vec2& values,Renderer& renderer,Vec3 position={0.0f,0.0f,0.0f},Vec3 scale={1.0f,1.0f,1.0f}){
+    void draw(const Vec2& values,Renderer& renderer,Mat4 transformMatrix){
         for(int i=0;i<models.size();i++){
             std::unique_ptr<AnimFunctionCollection>& funcs = animFunctions[i];
             Model* model = models[i];
             funcs->x_value=values.x;
             funcs->y_value=values.y;
             
+            Transform animationModelTransform;
 
-            Vec3 animatedRotation;
-            animatedRotation.x=funcs->exp_rx.value();
-            animatedRotation.y=funcs->exp_ry.value();
-            animatedRotation.z=funcs->exp_rz.value();
+            Vec3& rotation = animationModelTransform.rotation;
+            rotation.x=funcs->exp_rx.value();
+            rotation.y=funcs->exp_ry.value();
+            rotation.z=funcs->exp_rz.value();
+            rotation*=-juce::MathConstants<float>::pi/180.0f;
+            
 
-            animatedRotation*=-juce::MathConstants<float>::pi/180.0f;
-            renderer.drawModelAt(*model,position,animatedRotation,scale,model->textureID);
+            Mat4 finalMatrix = transformMatrix*animationModelTransform.getMatrix();
+
+            renderer.drawModelWithMatrix(*model,finalMatrix,Mat4(),model->textureID);
         }
     }
 };

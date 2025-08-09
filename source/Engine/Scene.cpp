@@ -5,7 +5,7 @@
 #include <algorithm>
 
 //vars
-std::vector<ModuleInstance> Scene::instances;
+//std::vector<ModuleInstance> Scene::instances;
 //camera settings
 float Scene::zoom=10.0f;
 float Scene::realZoom=Scene::zoom;
@@ -19,17 +19,17 @@ float Scene::panAcceleartion=0.01f;
 Vec2 Scene::mousePos;
 
 //functions
-void Scene::addModuleFromData(const ModuleData &data)
-{
-    ModuleInstance& instance = instances.emplace_back();
-    instance.moduleData=&data;
-    instance.init();
-}
-void Scene::draw(Renderer& renderer){
-    for(ModuleInstance& instance : instances){
-        instance.draw(renderer);
-    }
-}
+// void Scene::addModuleFromData(const ModuleData &data)
+// {
+//     ModuleInstance& instance = instances.emplace_back();
+//     instance.moduleData=&data;
+//     instance.init();
+// }
+// void Scene::draw(Renderer& renderer){
+//     for(ModuleInstance& instance : instances){
+//         instance.draw(renderer);
+//     }
+// }
 
 //runs every frame before drawing
 void Scene::applyCameraSettings(Renderer& renderer){
