@@ -3,6 +3,7 @@
 OBJ_Scene* Engine::scene=nullptr;
 std::vector<std::unique_ptr<Object>> Engine::objects;
 std::vector<PhysicsObject*> Engine::physicsObjects;
+std::vector<OBJ_Comp_Socket*> Engine::sockets;
 
 //engine renderer
 Renderer* Engine::renderer=nullptr;
@@ -54,4 +55,21 @@ void Engine::init(){
 void Engine::draw(){
     if(scene==nullptr)return;
     scene->callDraw();
+}
+
+Vec3 Engine::screenPosToZPlane(Vec2 screenPos,float zValue)
+{
+        //THIS COULD PROBABLY BE MADE FASTER
+
+        //calculate where it intersects the given z value
+        Ray ray = Engine::renderer->rayFrom(screenPos);        
+        Vec3 targetPosition = ray.direction;
+        
+        //find the difference
+        float difference = zValue-ray.origin.z;
+        
+        targetPosition/=targetPosition.z;
+        targetPosition*=difference;
+
+        return ray.origin+targetPosition;
 }

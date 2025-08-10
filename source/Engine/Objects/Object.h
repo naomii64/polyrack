@@ -15,6 +15,8 @@ class Object{
         Transform transform;
         Mat4 matrix;
         Mat4 normalMatrix;
+
+        Vec3 worldTranslation;
         //tree structure
         std::vector<Object*> children;
         Object* parent;
@@ -33,6 +35,8 @@ class Object{
         void setScale(Vec3 newScale);
         void setRotation(Vec3 newRotation);
         void setTransform(Vec3 newPosition, Vec3 newRotation, Vec3 newScale);
+
+        void addChild(Object* child);
     private:
         //so that matrixes are only recalculated once
         bool matrixRecalculationRequested = true;
@@ -61,17 +65,24 @@ class OBJ_Module : public Object{
 
         void onTransformChange() override;
 };
+struct CablePoint;
 //components
-class OBJ_Component : public Object{};
+class OBJ_Component : public Object{
+    public:
+        virtual void initComponent(const juce::var& fromObject,ModuleData& moduleData);
+};
 class OBJ_Comp_Mesh : public OBJ_Component{
     public:
         void onDraw() override;
-
+        void initComponent(const juce::var& fromObject,ModuleData& moduleData) override;
         Model* model;
 };
 class OBJ_Comp_Socket : public OBJ_Component{
     public:
         void onDraw() override;
+        void initComponent(const juce::var& fromObject,ModuleData& moduleData) override;
+        void onTransformChange() override;
+        CablePoint* connectedPoint;
 };
 class OBJ_Comp_Input : public OBJ_Component{
     public:
@@ -80,6 +91,7 @@ class OBJ_Comp_Input : public OBJ_Component{
         Vec2 values;
         int hitboxID;
         void onTransformChange() override;
+        void initComponent(const juce::var& fromObject,ModuleData& moduleData) override;
 };
 //physics objects
 struct CablePoint{
@@ -90,6 +102,16 @@ struct CablePoint{
     //might replace later with storing the matrix
     Vec3 rotation;
     Mat4 matrix;
+
+    //these are only really needed for the first and last point
+    bool isFirst;
+    OBJ_Comp_Socket* connectedSocket=nullptr;
+    
+    void connectToSocket();
+    void detachFromSocket();
+    
+    void lookAtSocket(OBJ_Comp_Socket& socket);
+    
 };
 class POBJ_Cable : public PhysicsObject{
     public:

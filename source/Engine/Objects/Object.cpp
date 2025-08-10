@@ -13,6 +13,10 @@ void Object::updateMatrix(){
     }else{
         matrix = transform.getMatrix();
     }
+
+    //maybe change this to only calculate for classes that need it later
+    worldTranslation=matrix.getTranslation();
+
     for(Object* obj : children){
         obj->updateMatrix();
     }
@@ -52,6 +56,12 @@ void Object::setTransform(Vec3 newPosition, Vec3 newRotation, Vec3 newScale)
     transform.rotation = newRotation;
     transform.scale = newScale;
     matrixRecalculationRequested=true;
+}
+
+void Object::addChild(Object *child)
+{
+    child->parent=this;
+    children.push_back(child);
 }
 
 void PhysicsObject::physicsTick(float delta) {}
@@ -124,19 +134,11 @@ void POBJ_Cable::rotatePoints(){
         CablePoint& pointA = points[i];
         CablePoint& pointB = points[i + 1];
 
-        Vec3 dir = pointB.position - pointA.position;
+        if(pointA.fixed) continue;
 
-        // Normalize the direction
-        Vec3 fwd = dir.normalized(); // Assuming you have a .normalized() function
-
-        // Calculate pitch and yaw
-        float pitch = std::atan2(-fwd.y, std::sqrt(fwd.x * fwd.x + fwd.z * fwd.z)); // rotation around X
-        float yaw   = std::atan2(fwd.x, fwd.z); // rotation around Y
-        float roll=0.0f;
-
-        pointA.rotation = { pitch, yaw, roll }; // roll = 0
+        pointA.rotation = pointA.position.lookAt(pointB.position);
     }
-    points.back().rotation=points[points.size()-2].rotation;
+    if(!points.back().fixed) points.back().rotation=points[points.size()-2].rotation;
 }
 void POBJ_Cable::calculateMatrices(){
     for(CablePoint& point : points){
@@ -176,6 +178,7 @@ void POBJ_Cable::createCable(int pointCount,Vec3 start,Vec3 end){
         points[i].position=currentPointPos;
         points[i].previousPosition=currentPointPos;
     }
+    points[0].isFirst=true;
 
     //create and assign hitboxes
     hitboxAID = createPointHitbox(points[0]);
@@ -213,14 +216,14 @@ void POBJ_Cable::onDraw(){
     //move these later
     //or might just change to be handled better in the future instead of using matrices
     Mat4 rotateStart={
-        1.0f,0.0,0.0,0.0,
         0.0f,0.0,1.0,0.0,
+        -1.0f,0.0,0.0,0.0,
         0.0f,-1.0,0.0,0.0,
         0.0f,0.0,0.0,1.0
     };
     Mat4 rotateEnd={
-        -1.0f,0.0,0.0,0.0,
         0.0f,0.0,1.0,0.0,
+        1.0f,0.0,0.0,0.0,
         0.0f,1.0,0.0,0.0,
         0.0f,0.0,0.0,1.0
     };
@@ -239,24 +242,50 @@ int POBJ_Cable::createPointHitbox(CablePoint& point)
     CablePoint* pointPtr = &point;
     hitbox.mouseDown=[pointPtr]{
         pointPtr->fixed=true;
+        pointPtr->detachFromSocket();
     };
     hitbox.mouseUp=[pointPtr]{
         pointPtr->fixed=false;
+        if(pointPtr->connectedSocket){
+            pointPtr->connectToSocket();
+        }
     };
     hitbox.onDrag=[pointPtr](Vec2 delta,Vec2 mousePos){
-        const float zIntersectValue = 0.0f;
-        //calculate where it intersects the given z value
+        //put this as a constant somewhere since its the same as the distance the plugs should be at
+        const float zIntersectValue = 1.2f;
+        pointPtr->position=Engine::screenPosToZPlane(mousePos,zIntersectValue);
 
-        Ray mousePosRay = Engine::renderer->rayFrom(mousePos);        
-        Vec3 targetPosition = mousePosRay.direction;
-        
-        //find the difference
-        float difference = zIntersectValue-mousePosRay.origin.z;
-        
-        targetPosition/=targetPosition.z;
-        targetPosition*=difference;
+        //find the nearest socket
+        constexpr float connectionDistance = 2.0f;
+        constexpr float lookAtDistance = 3.0f;
 
-        pointPtr->position=mousePosRay.origin+targetPosition;
+        constexpr float lookAtDistnaceSquared=lookAtDistance*lookAtDistance;
+        constexpr float connectionDistnaceSquared=connectionDistance*connectionDistance;
+        float closestDistanceSquared=0.0f;
+        OBJ_Comp_Socket* closestSocket = nullptr;
+        pointPtr->connectedSocket=nullptr;
+
+        for(OBJ_Comp_Socket* socket : Engine::sockets){
+            //ignore sockets that are taken
+            if(socket->connectedPoint) continue;
+
+            Vec3 difference = pointPtr->position-socket->worldTranslation;
+            //probably dont even need this to be squared yet
+            Vec3 differenceSquared = difference*difference;
+            float distanceSquared = differenceSquared.x+differenceSquared.y+differenceSquared.z;
+            if((!closestSocket)||(distanceSquared<closestDistanceSquared)){
+                closestSocket=socket;
+                closestDistanceSquared=distanceSquared;
+            }
+        }   
+        if(closestSocket){
+            if(closestDistanceSquared<lookAtDistnaceSquared){
+                pointPtr->lookAtSocket(*closestSocket);
+            }
+            if(closestDistanceSquared<connectionDistnaceSquared){
+                pointPtr->connectedSocket=closestSocket;
+            }
+        }    
     };
 
     return hitboxID;
@@ -270,43 +299,34 @@ void OBJ_Module::createFrom(ModuleData *moduleData)
     mainHitboxID=HitboxManager::createHitboxID();
     auto& hitbox = HitboxManager::hitboxes[mainHitboxID];
     hitbox.bounds=Vec3(float(width),float(height),1.0f)*0.5f;
+    Hitbox* hbptr=&hitbox;
+    hitbox.onDrag=[this,hbptr](Vec2 delta, Vec2 mousePos){
+        Vec2 prevPos = mousePos-delta;
+
+        const float zValue = 0.0f;
+
+        Vec3 pointA = Engine::screenPosToZPlane(prevPos,zValue);
+        Vec3 pointB = Engine::screenPosToZPlane(mousePos,zValue);
+
+        Vec3 delta3D = pointB-pointA;
+        this->setPosition(this->transform.position+delta3D);
+        
+        //std::cout<<"dragging: "<< delta3D.toString()<<"\n";
+    };
 
     //TODO: FIX THIS LATERRRR
     for (const juce::var& obj : moduleData->layout){
         juce::String componentType = obj.getProperty("type", "[NONE]");
         std::cout<<componentType<<"\n";
 
-        Object* component;
+        OBJ_Component* component;
         //MOVE ALL THIS STUFF TO FUNCTIONS LATER
         if (componentType == "static mesh") {
-            auto& objRef = static_cast<OBJ_Comp_Mesh&>(*Engine::objects.emplace_back(std::make_unique<OBJ_Comp_Mesh>()));
-            component = &objRef;
-
-            int modelID = obj.getProperty("modelID",0);
-            objRef.model = &moduleData->models[modelID];
+            component = &static_cast<OBJ_Comp_Mesh&>(*Engine::objects.emplace_back(std::make_unique<OBJ_Comp_Mesh>()));
         } else if (componentType == "socket") {
-            auto& objRef = static_cast<OBJ_Comp_Socket&>(*Engine::objects.emplace_back(std::make_unique<OBJ_Comp_Socket>()));
-            component = &objRef;
+            component = &static_cast<OBJ_Comp_Socket&>(*Engine::objects.emplace_back(std::make_unique<OBJ_Comp_Socket>()));
         } else if (componentType == "input") {
-            auto& objRef = static_cast<OBJ_Comp_Input&>(*Engine::objects.emplace_back(std::make_unique<OBJ_Comp_Input>()));
-            component = &objRef;
-            OBJ_Comp_Input* objPtr = &objRef;
-
-            int animationID = obj.getProperty("animationID",0);
-            objRef.animation=&moduleData->animations[animationID];
-            
-            objRef.hitboxID=HitboxManager::createHitboxID();
-            Hitbox& hitbox = HitboxManager::hitboxes[objRef.hitboxID];
-            hitbox.bounds=objRef.animation->hitboxSize;
-
-            hitbox.onDrag = [objPtr](Vec2 delta,Vec2 mousePos){
-                const float sensitivity=0.005f;
-                objPtr->values+=delta*Vec2(1.0f,-1.0f)*sensitivity;
-                objPtr->values.x=std::max(objPtr->values.x,0.0f);
-                objPtr->values.y=std::max(objPtr->values.y,0.0f);
-                objPtr->values.x=std::min(objPtr->values.x,1.0f);
-                objPtr->values.y=std::min(objPtr->values.y,1.0f);
-            };
+            component = &static_cast<OBJ_Comp_Input&>(*Engine::objects.emplace_back(std::make_unique<OBJ_Comp_Input>()));
         }else{
             continue;
         }
@@ -317,8 +337,9 @@ void OBJ_Module::createFrom(ModuleData *moduleData)
         Vec3 vScale = readVec3FromObj(obj["scale"], Vec3(1.0f));
 
         component->setTransform(vPosition,vRotation,vScale);
+        component->initComponent(obj,*moduleData);
 
-        children.push_back(component);
+        addChild(component);
     }
 }
 void OBJ_Module::onTransformChange(){
@@ -344,5 +365,62 @@ void OBJ_Comp_Input::onDraw()
 void OBJ_Comp_Input::onTransformChange()
 {
     auto& hitbox = HitboxManager::hitboxes[hitboxID];
-    hitbox.position=matrix.getTranslation();
+    hitbox.position=worldTranslation;
+}
+void OBJ_Comp_Socket::onTransformChange()
+{
+    if(!connectedPoint) return;
+    connectedPoint->connectToSocket();
+}
+
+void OBJ_Component::initComponent(const juce::var &fromObject,ModuleData& moduleData){}
+void OBJ_Comp_Input::initComponent(const juce::var &fromObject,ModuleData& moduleData){
+    int animationID = fromObject.getProperty("animationID",0);
+    animation=&moduleData.animations[animationID];
+            
+    hitboxID=HitboxManager::createHitboxID();
+    Hitbox& hitbox = HitboxManager::hitboxes[hitboxID];
+    hitbox.bounds=animation->hitboxSize;
+
+    hitbox.onDrag = [this](Vec2 delta,Vec2 mousePos){
+        const float sensitivity=0.005f;
+        this->values+=delta*Vec2(1.0f,-1.0f)*sensitivity;
+        this->values.x=std::max(this->values.x,0.0f);
+        this->values.y=std::max(this->values.y,0.0f);
+        this->values.x=std::min(this->values.x,1.0f);
+        this->values.y=std::min(this->values.y,1.0f);
+    };
+}
+void OBJ_Comp_Socket::initComponent(const juce::var &fromObject,ModuleData& moduleData){
+    Engine::sockets.push_back(this);
+}
+void OBJ_Comp_Mesh::initComponent(const juce::var &fromObject,ModuleData& moduleData){
+    int modelID = fromObject.getProperty("modelID",0);
+    model = &moduleData.models[modelID];
+}
+
+void CablePoint::connectToSocket()
+{
+    //if the socket is taken
+    if(!connectedSocket) return;
+    if(!(connectedSocket->connectedPoint==this||connectedSocket->connectedPoint==nullptr)) return;
+
+    fixed=true;
+    //the rubber part of the plug is 1.0 and the socket rim is 0.2
+    Vec3 positionOffset = {0.0f,0.0f,1.2f};
+    position=connectedSocket->worldTranslation+positionOffset;
+    lookAtSocket(*connectedSocket);
+    connectedSocket->connectedPoint=this;
+}
+void CablePoint::detachFromSocket()
+{
+    if(connectedSocket){
+        connectedSocket->connectedPoint=nullptr;
+        connectedSocket=nullptr;
+    }
+}
+void CablePoint::lookAtSocket(OBJ_Comp_Socket &socket)
+{
+    if(isFirst) rotation=socket.worldTranslation.lookAt(position);
+    else rotation=position.lookAt(socket.worldTranslation);
 }

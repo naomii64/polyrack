@@ -146,6 +146,19 @@ struct Vec3 {
 
         return "("+xString+","+yString+","+zString+")";
     }
+
+    Vec3 lookAt(const Vec3& target) const {
+        Vec3 dir = target - *this; // direction from current point to target
+
+        // Normalize the direction
+        Vec3 fwd = dir.normalized(); // Assuming you have a .normalized() function
+
+        // Calculate pitch and yaw
+        float pitch = std::atan2(-fwd.y, std::sqrt(fwd.x * fwd.x + fwd.z * fwd.z)); // rotation around X
+        float yaw   = std::atan2(fwd.x, fwd.z); // rotation around Y
+
+        return { pitch, yaw, 0.0f }; // roll = 0
+    }
 };
 struct Vec2 {
     //constructors
