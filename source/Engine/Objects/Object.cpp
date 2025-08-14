@@ -134,11 +134,15 @@ void POBJ_Cable::rotatePoints(){
         CablePoint& pointA = points[i];
         CablePoint& pointB = points[i + 1];
 
-        if(pointA.fixed) continue;
+        if(pointA.lockRotation) continue;
 
         pointA.rotation = pointA.position.lookAt(pointB.position);
+
+        if(i>0){
+            pointA.rotation=(pointA.rotation+points[i-1].rotation)*0.5f;
+        }
     }
-    if(!points.back().fixed) points.back().rotation=points[points.size()-2].rotation;
+    if(!points.back().lockRotation) points.back().rotation=points[points.size()-2].rotation;
 }
 void POBJ_Cable::calculateMatrices(){
     for(CablePoint& point : points){
@@ -148,6 +152,8 @@ void POBJ_Cable::calculateMatrices(){
         Mat4 rotZ = Mat4::rotationZ(point.rotation.z);
         Mat4 rotationMatrix = rotY * rotX * rotZ;
         point.matrix=Mat4::translation(point.position)*rotationMatrix;
+
+        point.inverseRotationMatrix=Mat4::inverseRotation(point.rotation);
     }
 }
 void POBJ_Cable::moveHitboxes(){
@@ -227,8 +233,12 @@ void POBJ_Cable::onDraw(){
         0.0f,1.0,0.0,0.0,
         0.0f,0.0,0.0,1.0
     };
-    Engine::renderer->drawModelWithMatrix(EngineAssets::mCableEnd,points[0].matrix*rotateStart,Mat4(),EngineAssets::tRack);
-    Engine::renderer->drawModelWithMatrix(EngineAssets::mCableEnd,points.back().matrix*rotateEnd,Mat4(),EngineAssets::tRack);
+
+    CablePoint& start = points[0];
+    CablePoint& end = points.back();
+
+    Engine::renderer->drawModelWithMatrix(EngineAssets::mCableEnd,start.matrix*rotateStart,start.inverseRotationMatrix*rotateStart,EngineAssets::tRack);
+    Engine::renderer->drawModelWithMatrix(EngineAssets::mCableEnd,end.matrix*rotateEnd,Mat4(),EngineAssets::tRack);
 }
 
 int POBJ_Cable::createPointHitbox(CablePoint& point)
@@ -246,6 +256,7 @@ int POBJ_Cable::createPointHitbox(CablePoint& point)
     };
     hitbox.mouseUp=[pointPtr]{
         pointPtr->fixed=false;
+        pointPtr->lockRotation=false;
         if(pointPtr->connectedSocket){
             pointPtr->connectToSocket();
         }
@@ -278,11 +289,17 @@ int POBJ_Cable::createPointHitbox(CablePoint& point)
                 closestDistanceSquared=distanceSquared;
             }
         }   
+
+        pointPtr->lockRotation=false;
         if(closestSocket){
-            if(closestDistanceSquared<lookAtDistnaceSquared){
+            const bool canLookAt = closestDistanceSquared<lookAtDistnaceSquared;
+            const bool canConnect = closestDistanceSquared<connectionDistnaceSquared;
+            
+            if(canLookAt){
+                pointPtr->lockRotation=true;
                 pointPtr->lookAtSocket(*closestSocket);
             }
-            if(closestDistanceSquared<connectionDistnaceSquared){
+            if(canConnect){
                 pointPtr->connectedSocket=closestSocket;
             }
         }    
@@ -309,7 +326,8 @@ void OBJ_Module::createFrom(ModuleData *moduleData)
         Vec3 pointB = Engine::screenPosToZPlane(mousePos,zValue);
 
         Vec3 delta3D = pointB-pointA;
-        this->setPosition(this->transform.position+delta3D);
+        this->truePosition+=delta3D;
+        this->setPosition(Vec3::round(this->truePosition));
         
         //std::cout<<"dragging: "<< delta3D.toString()<<"\n";
     };
@@ -405,6 +423,7 @@ void CablePoint::connectToSocket()
     if(!connectedSocket) return;
     if(!(connectedSocket->connectedPoint==this||connectedSocket->connectedPoint==nullptr)) return;
 
+    lockRotation=true;
     fixed=true;
     //the rubber part of the plug is 1.0 and the socket rim is 0.2
     Vec3 positionOffset = {0.0f,0.0f,1.2f};

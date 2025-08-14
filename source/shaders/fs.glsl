@@ -26,7 +26,7 @@ void main()
                 
     //final colors that do get combined
     vec4 texColor = texture(myTexture,  cropUVSToTexture(vTexCoord,uTextureID));
-    vec4 shadowColor = vec4(0.0);
+    /*vec4 shadowColor = vec4(0.0);
     shadowColor+=mappedNormal.y*3.0;
     shadowColor+=mappedNormal.x;
     shadowColor+=mappedNormal.z*2.0;
@@ -34,7 +34,8 @@ void main()
     shadowColor*=shadowColor;
 
     shadowColor.a=1.0;
-    FragColor = /*shadowColor**/texColor*uTintColor;
+    */
+    FragColor = texColor*uTintColor;
 
     //FragColor=round(FragColor*8.0)/8.0;
 }

@@ -63,6 +63,9 @@ class OBJ_Module : public Object{
 
         int mainHitboxID;
 
+        //stores the unrounded position so that it can be rounded
+        Vec3 truePosition;
+
         void onTransformChange() override;
 };
 struct CablePoint;
@@ -98,10 +101,13 @@ struct CablePoint{
     Vec3 position;
     Vec3 previousPosition;
     bool fixed;
+    bool lockRotation;
 
     //might replace later with storing the matrix
     Vec3 rotation;
+
     Mat4 matrix;
+    Mat4 inverseRotationMatrix;
 
     //these are only really needed for the first and last point
     bool isFirst;

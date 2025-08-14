@@ -91,19 +91,27 @@ void UIManager::assignGroup(UIObject& obj, int groupID){
     groups[groupID].push_back(&obj);
 }
 void UIManager::hideGroup(int groupID){
-    if (groupID < 0 || groupID >= groups.size()) {
+    /*if (groupID < 0 || groupID >= groups.size()) {
         return; // Group doesn't exist
     }
     for(UIObject* obj : groups[groupID]){
         obj->isVisible=false;
+    }*/
+    //just making this hide and show all for now
+    for(UIObject& obj : mainUI.getAllObjects()){
+        obj.isVisible=false;
     }
 }
 void UIManager::showGroup(int groupID){
-    if (groupID < 0 || groupID >= groups.size()) {
+    /*if (groupID < 0 || groupID >= groups.size()) {
         return; // Group doesn't exist
     }
     for(UIObject* obj : groups[groupID]){
         obj->isVisible=true;
+    }*/
+    //just making this hide and show all for now
+    for(UIObject& obj : mainUI.getAllObjects()){
+        obj.isVisible=true;
     }
 }
 void UIManager::click(const juce::MouseEvent& event){

@@ -8,7 +8,7 @@ class Importer{
             for(v of e.dataTransfer.files){
                 const n=v.name;
                 if(n.endsWith('.obj')){
-                    Importer.handleFile(v);
+                    ModelViewer.handleFile(v);
                 }
                 if(n.endsWith('.png')){
                     TextureEditor.handleFile(v);

@@ -159,6 +159,9 @@ struct Vec3 {
 
         return { pitch, yaw, 0.0f }; // roll = 0
     }
+    static Vec3 round(const Vec3& vec){
+        return {std::round(vec.x),std::round(vec.y),std::round(vec.z)};
+    }
 };
 struct Vec2 {
     //constructors
@@ -384,6 +387,10 @@ struct Mat4 {
     }
     static Mat4 rotation(float x, float y, float z) {
         return rotation(Vec3(x, y, z));
+    }
+    static Mat4 inverseRotation(const Vec3& v){
+        //will replace with a dedicated and faster one later
+        return rotation(v).fastInverseRT();
     }
     //perspective
     static Mat4 makePerspectiveMatrix(float fovYDegrees, float aspect, float nearZ, float farZ)

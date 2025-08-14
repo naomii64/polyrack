@@ -67,6 +67,8 @@ void AudioPluginAudioProcessorEditor::paint (juce::Graphics& g){}
 void AudioPluginAudioProcessorEditor::resized()
 {
     mainRenderer.setSize(getWidth(),getHeight());
+    testButton.setBounds(0,0,100,100);
+    mainRenderer.setTopLeftPosition(10,10);
 }
 void AudioPluginAudioProcessorEditor::onRendererLoad(){
     std::cout << "Rendererer started!\n";
@@ -123,7 +125,7 @@ void AudioPluginAudioProcessorEditor::mouseDown(const juce::MouseEvent& event) {
     if (event.mods.isRightButtonDown()) {
         // Right mouse button was clicked
         //TODO: redo ui
-        UIManager::showGroup(UIManager::moduleSelectionGroup);
+        //UIManager::showGroup(UIManager::moduleSelectionGroup);
     }
     if (event.mods.isLeftButtonDown()) {
         // Right mouse button was clicked

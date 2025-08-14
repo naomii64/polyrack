@@ -42,7 +42,7 @@ void main()
 
     gl_Position = uProjectionMatrix*uViewMatrix*uModelMatrix*groupMatrix*aPosition; 
 
-    vWorldNormal = aNormal*uModelNormal;
+    vWorldNormal = uModelNormal*aNormal;
     vColour = aColor;
     vTexCoord = vec2(uTexCoordMatrix*vec3(aTexCoord.xy,1.0)).xy;
 
