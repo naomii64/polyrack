@@ -15,6 +15,7 @@ namespace EngineAssets{
     extern Model mAxis;
 
     extern Model mCableModel;
+    extern Model mBorderRectModel;
     //textuerIDs
     extern int tBorder;
     extern int tFont;
@@ -27,4 +28,19 @@ namespace EngineAssets{
     void loadModel(Model& model, const juce::OpenGLContext& context, const juce::String& fileName);
     void loadAll(juce::OpenGLContext &openGLContext);
     void createCableModel(juce::OpenGLContext &openGLContext);
+    void createBorderRectModel(juce::OpenGLContext &openGLContext);
 }
+
+enum NineSlice {
+    TOP_LEFT = 0,
+    TOP_MIDDLE = 1,
+    TOP_RIGHT = 2,
+    
+    MIDDLE_LEFT = 3,
+    MIDDLE_MIDDLE = 4,
+    MIDDLE_RIGHT = 5,
+    
+    BOTTOM_LEFT = 6,
+    BOTTOM_MIDDLE = 7,
+    BOTTOM_RIGHT = 8
+};

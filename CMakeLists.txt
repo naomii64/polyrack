@@ -79,14 +79,11 @@ target_sources(Polyrack
         source/Engine/TextureManager.cpp
         source/Engine/ModuleManager.cpp
         source/Engine/Scene.cpp
-        #source/Engine/Components.cpp
         source/Engine/Hitboxes.cpp
+        #ui
+        source/UI/UI.cpp
         #files
         source/Files/FileManager.cpp
-        #ui
-        source/UI/UIObject.cpp
-        source/UI/UIManager.cpp
-        source/UI/UIMenu.cpp
         #object
         source/Engine/Objects/Object.cpp
 )

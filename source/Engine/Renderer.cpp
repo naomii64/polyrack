@@ -166,10 +166,50 @@ void Renderer::drawRect(float x, float y, float width, float height, int texture
     drawModelAt(EngineAssets::mTestSquare, position, rotation, scale,textureID,tint);
 }
 
-void Renderer::drawBorderRect(float x, float y, float width, float height, float borderWidth ,float uvBorderWidth, int textureID, Vec4 tint) {
-    drawRect(x,y,width,height,textureID,tint);
+void Renderer::drawBorderRect(float x, float y, float width, float height, float borderWidth , int textureID, Vec4 tint) {
+    //still probably too much math for a simple rectange, might optimize later
+    //probably make a class that stores all this and only recalculates when things change
+    //i have no idea why down being +y and -y is inconsistent
 
-    return;
+    constexpr float z = -1.0f;
+
+    const float borderWidth2 = borderWidth*2;
+
+    const float usedHeight = std::max(height,borderWidth2);
+    const float usedWidth = std::max(width,borderWidth2);
+    
+    const Vec3 position = {x, y, z};
+    const Vec3 rotation = {0.0f, 0.0f, 0.0f};
+    const Vec3 scale(1.0f);
+
+
+    std::vector<Mat4> matrices;
+    for(int i=0;i<17;i++)matrices.emplace_back();
+
+    const Mat4 cornerScale = Mat4::scaling(Vec3(borderWidth));
+    const Mat4 verticalBarScale = Mat4::scaling(Vec3(borderWidth,usedHeight-borderWidth2,1.0f));
+    const Mat4 horizontalBarScale = Mat4::scaling(Vec3(usedWidth-borderWidth2,borderWidth,1.0f));
+    
+
+    const float rightXvalue = usedWidth-borderWidth;
+    const float bottomYvalue = -usedHeight+borderWidth;
+
+    matrices[NineSlice::TOP_LEFT+1]=cornerScale;
+    matrices[NineSlice::BOTTOM_RIGHT+1]=Mat4::translation(rightXvalue,bottomYvalue,0.0f)*cornerScale;
+    matrices[NineSlice::BOTTOM_LEFT+1]=Mat4::translation(0.0f,bottomYvalue,0.0f)*cornerScale;
+    matrices[NineSlice::TOP_RIGHT+1]=Mat4::translation(rightXvalue,0.0f,0.0f)*cornerScale;
+    
+    matrices[NineSlice::TOP_MIDDLE+1]=Mat4::translation(borderWidth,0.0f,0.0f)*horizontalBarScale;
+    matrices[NineSlice::BOTTOM_MIDDLE+1]=Mat4::translation(borderWidth,bottomYvalue,0.0f)*horizontalBarScale;
+
+    matrices[NineSlice::MIDDLE_RIGHT+1]=Mat4::translation(rightXvalue,-borderWidth,0.0f)*verticalBarScale;
+    matrices[NineSlice::MIDDLE_LEFT+1]=Mat4::translation(0.0f,-borderWidth,0.0f)*verticalBarScale;
+
+    matrices[NineSlice::MIDDLE_MIDDLE+1]=Mat4::translation(borderWidth,-borderWidth,0.0f)* Mat4::scaling(usedWidth-borderWidth2,usedHeight-borderWidth2,0.0f);
+
+    uploadMatrixList(matrices);
+
+    drawModelAt(EngineAssets::mBorderRectModel, position, rotation, scale,textureID,tint);
 }
 
 void Renderer::setUVMatrix(Mat3 matrix)
@@ -256,7 +296,6 @@ void Renderer::newOpenGLContextCreated()
 
     //LOAD MODEL ASSETS FROM FILES-------POLYRACK EXCLUSIVE
     EngineAssets::loadAll(openGLContext);
-    UIManager::init(*this);
     //==============================
     // Fullscreen shader program
     //==============================
@@ -360,8 +399,8 @@ void Renderer::renderOpenGL(){
     shaderProgram->setUniformMat4("uViewMatrix", Mat4::identity, 1, gl::GL_FALSE);
 
     gl::glClear( gl::GL_DEPTH_BUFFER_BIT);
-    //draw all the ui
-    UIManager::drawAll(*this);
+
+    //drawBorderRect(0,0,Scene::mousePos.x,Scene::mousePos.y,20,EngineAssets::tBorder);
 
     //>>>>end of draw cals
     //=====================

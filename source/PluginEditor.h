@@ -4,7 +4,6 @@
 #include "Engine/Renderer.h"
 #include "Engine/EngineAssets.h"
 #include "Files/FileManager.h"
-#include "juce_gui_basics/juce_gui_basics.h"
 
 //==============================================================================
 class AudioPluginAudioProcessorEditor final : public juce::AudioProcessorEditor
@@ -29,8 +28,6 @@ public:
     TextureManager textureAtlas;
 
     static AudioPluginAudioProcessorEditor* mainProcessEditor;
-
-    juce::TextButton testButton;
 
 private:
     Vec2 previousMousePos;

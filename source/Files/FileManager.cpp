@@ -1,9 +1,10 @@
 #pragma once
 #include "FileManager.h"
-
+#include "../Engine/Includes/ParseOBJ.h"
 
 //to import readvec3fromobj
 #include "../Engine/Objects/Object.h"
+
 
 //fileManager Variables
 juce::File FileManager::appDataFolder;
@@ -16,7 +17,6 @@ inline bool verifyFolder(const juce::File& folder)
     if (folder.exists()){
         return folder.isDirectory(); // true only if it's a directory
     }
-
     return folder.createDirectory(); // true if creation succeeded
 }
 juce::String readZipEntryAsString(juce::ZipFile* zipFile,const juce::ZipFile::ZipEntry* entry)
@@ -61,11 +61,9 @@ void FileManager::loadModules(Renderer& renderer,TextureManager& textureAtlas) {
     {
         const auto& fileName = file.getFileName();
         const auto& extension = file.getFileExtension();
-        //ignore non module extensions
         if(!(extension==".zip"||extension==".plk")) continue;
         //start reading the data
         juce::ZipFile zipFile(file);
-        //get the main module file
         const auto& mainJSON = zipFile.getEntry("module.json");
         juce::String jsonText = "";
 
@@ -94,6 +92,8 @@ void FileManager::loadModules(Renderer& renderer,TextureManager& textureAtlas) {
         moduleData.layout = *layoutComponents;
         moduleData.width=moduleLayout.getProperty("width",1);
         moduleData.height=moduleLayout.getProperty("height",1);
+        
+        std::cout<<"loading module: \""<< moduleData.name <<"\"\n";
 
         std::vector<int> textureIDs;
         //loop through the textures and initialize them
@@ -150,11 +150,6 @@ void FileManager::loadModules(Renderer& renderer,TextureManager& textureAtlas) {
                 funcs->compileExpressions();
             }
         }
-
-        //heres where the layout will be loaded
-        //for (const juce::var& var : *layoutComponents){
-        //    moduleData.components.push_back(componentFromJSONObject(var,moduleData));
-        //}
     }
 }
 

@@ -67,11 +67,9 @@ void AudioPluginAudioProcessorEditor::paint (juce::Graphics& g){}
 void AudioPluginAudioProcessorEditor::resized()
 {
     mainRenderer.setSize(getWidth(),getHeight());
-    testButton.setBounds(0,0,100,100);
-    mainRenderer.setTopLeftPosition(10,10);
 }
 void AudioPluginAudioProcessorEditor::onRendererLoad(){
-    std::cout << "Rendererer started!\n";
+    //std::cout << "Rendererer started!\n";
     //load textures
     EngineAssets::tRack = textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("rack.png")));
     EngineAssets::tCable = textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("cable.png")));
@@ -104,7 +102,7 @@ void AudioPluginAudioProcessorEditor::mouseDrag(const juce::MouseEvent& event){u
 void AudioPluginAudioProcessorEditor::updateMouse(const juce::MouseEvent& event){
     Vec2 position = Vec2(event.position.x, event.position.y);
     Scene::mousePos=position;
-    UIManager::updateMousePos(mainRenderer, position);
+    //UIManager::updateMousePos(mainRenderer, position);
     HitboxManager::dragHitbox(position - previousMousePos,position);
 
     previousMousePos = position;
@@ -129,7 +127,7 @@ void AudioPluginAudioProcessorEditor::mouseDown(const juce::MouseEvent& event) {
     }
     if (event.mods.isLeftButtonDown()) {
         // Right mouse button was clicked
-        UIManager::click(event);
+        //UIManager::click(event);
         HitboxManager::click(mainRenderer,event);
     }
 }

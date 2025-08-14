@@ -8,7 +8,6 @@
 #include "Includes/DataTypes.h"
 #include "TextureManager.h"
 //ui
-#include "../UI/UIManager.h"
 #include "Includes/Ray.h"
 
 #include <cmath>
@@ -58,9 +57,7 @@ public:
 		float y, 
 		float width, 
 		float height, 
-		//border width in pixels
 		float borderWidth, 
-		float uvBorderWidth,
 		int textureID=0,
 		Vec4 tint = {1.0f,1.0f,1.0f,1.0f}
 	);

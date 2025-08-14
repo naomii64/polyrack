@@ -9,6 +9,7 @@ namespace EngineAssets{
     Model mWireCube;
     Model mAxis;
     Model mCableModel;
+    Model mBorderRectModel;
     //texture IDS
     int tBorder;
     int tFont;
@@ -38,6 +39,105 @@ namespace EngineAssets{
         loadModel(mAxis,openGLContext,"axis.obj");
 
         createCableModel(openGLContext);
+        createBorderRectModel(openGLContext);
+    }
+    void createBorderRectModel(juce::OpenGLContext &openGLContext){
+        std::vector<Vertex> vertices;
+        std::vector<uint8_t> groups;
+        //create the 9 slices over eachother
+        for(int i=0;i<9;i++){
+            #define POS1 {0.0f,-1.0f,0.0f}
+            #define POS2 {1.0f,-1.0f,0.0f}
+            #define POS3 {1.0f,0.0f,0.0f}
+            #define POS4 {0.0f,0.0f,0.0f}
+
+            Vec2 UVA(0.0f);
+            Vec2 UVB(1.0f);
+            
+            Vec2 uvOffset(0.0f);
+
+            //UVS ARE ALSO WEIRD ABOUT WHATS UPSIDE DOWN OMG
+
+            switch (i)
+            {
+                case NineSlice::BOTTOM_LEFT:
+                    uvOffset=Vec2(0.0f);
+                    break;
+                case NineSlice::BOTTOM_MIDDLE:
+                    uvOffset=Vec2(1.0f,0.0f);
+                    break;
+                case NineSlice::BOTTOM_RIGHT:
+                    uvOffset=Vec2(2.0f,0.0f);
+                    break;
+                
+                case NineSlice::MIDDLE_LEFT:
+                    uvOffset=Vec2(0.0f,1.0f);
+                    break;
+                case NineSlice::MIDDLE_MIDDLE:
+                    uvOffset=Vec2(1.0f,1.0f);
+                    break;
+                case NineSlice::MIDDLE_RIGHT:
+                    uvOffset=Vec2(2.0f,1.0f);
+                    break;
+                    
+                case NineSlice::TOP_LEFT:
+                    uvOffset=Vec2(0.0f,2.0f);
+                    break;
+                case NineSlice::TOP_MIDDLE:
+                    uvOffset=Vec2(1.0f,2.0f);
+                    break;
+                case NineSlice::TOP_RIGHT:
+                    uvOffset=Vec2(2.0f,2.0f);
+                    break;                
+                    
+                default:
+                    break;
+            }
+            UVA+=uvOffset;
+            UVB+=uvOffset;
+            UVA/=3.0f;
+            UVB/=3.0f;
+
+            #define UV1 {UVA.x,UVA.y}
+            #define UV2 {UVB.x,UVA.y}
+            #define UV3 {UVB.x,UVB.y}
+            #define UV4 {UVA.x,UVB.y}
+
+            #define NORMAL {1.0f,1.0f,1.0f}
+            #define COLOR {1.0f,1.0f,1.0f,1.0f}
+            
+            const Vertex newVertices[] = {
+                {POS1,NORMAL,COLOR,UV1},
+                {POS2,NORMAL,COLOR,UV2},
+                {POS3,NORMAL,COLOR,UV3},
+                {POS4,NORMAL,COLOR,UV4}
+            };
+
+            vertices.push_back(newVertices[0]);
+            vertices.push_back(newVertices[1]);
+            vertices.push_back(newVertices[3]);
+
+            vertices.push_back(newVertices[3]);
+            vertices.push_back(newVertices[1]);
+            vertices.push_back(newVertices[2]);
+
+            for(int group=0;group<6;group++) groups.push_back(i+1);
+
+            #undef POS2
+            #undef POS1
+            #undef POS3
+            #undef POS4
+
+            #undef UV1
+            #undef UV2
+            #undef UV3
+            #undef UV4
+
+            #undef NORMAL
+            #undef COLOR
+        }
+
+        mBorderRectModel.createGeometry(openGLContext,vertices,groups);
     }
     void createCableModel(juce::OpenGLContext &openGLContext)
     {
