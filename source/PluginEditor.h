@@ -4,6 +4,7 @@
 #include "Engine/Renderer.h"
 #include "Engine/EngineAssets.h"
 #include "Files/FileManager.h"
+#include "UI/UI.h"
 
 //==============================================================================
 class AudioPluginAudioProcessorEditor final : public juce::AudioProcessorEditor
@@ -29,6 +30,10 @@ public:
 
     static AudioPluginAudioProcessorEditor* mainProcessEditor;
 
+    //ui stuff for now, probably move later
+    UIObject mainUI = UIObject();   //main ui object
+    int moduleListUIOBJ=0;
+
 private:
     Vec2 previousMousePos;
     // This reference is provided as a quick way for your editor to
@@ -36,6 +41,10 @@ private:
     AudioPluginAudioProcessor& processorRef;
 
     Renderer mainRenderer;
+
+    void resizeUI();
+    
+    void createModuleListUI();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioPluginAudioProcessorEditor)
 };

@@ -218,6 +218,10 @@ struct Vec2 {
 
         return "("+xString+","+yString+")";
     }
+
+    static bool pointWithinRect(Vec2 point,Vec2 min, Vec2 max){
+        return (point.x>=min.x)&&(point.y>=min.y)&&(point.x<=max.x)&&(point.y<=max.y);
+    }
 };
 struct Vec4 {
     //constructors

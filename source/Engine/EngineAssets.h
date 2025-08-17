@@ -2,6 +2,7 @@
 #include "Includes/Includes.h"
 #include "TextManager.h"
 #include "../Files/FileManager.h"
+#include "TextureManager.h"
 
 namespace EngineAssets{
     //items will be prefixed with m if theyre a model
@@ -18,15 +19,20 @@ namespace EngineAssets{
     extern Model mBorderRectModel;
     //textuerIDs
     extern int tBorder;
+    extern int tBorderHovered;
     extern int tFont;
+    extern int tFontHovered;
     extern int tRack;
     extern int tBlank;
     extern int tCable;
 
     extern int tAxis;
 
-    void loadModel(Model& model, const juce::OpenGLContext& context, const juce::String& fileName);
-    void loadAll(juce::OpenGLContext &openGLContext);
+    void loadModel(Model& model, const juce::String& fileName);
+    void loadModels();
+    void loadTexture(TextureManager& atlas ,int& texture, const juce::String& fileName);
+    void loadTextures(TextureManager& atlas);
+    
     void createCableModel(juce::OpenGLContext &openGLContext);
     void createBorderRectModel(juce::OpenGLContext &openGLContext);
 }

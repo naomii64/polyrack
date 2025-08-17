@@ -293,9 +293,6 @@ void Renderer::newOpenGLContextCreated()
     //==============================
     createTextureFromImage(mainTextureImage);
     createTextureRectsFromAtlas(*mainTextureAtlas);
-
-    //LOAD MODEL ASSETS FROM FILES-------POLYRACK EXCLUSIVE
-    EngineAssets::loadAll(openGLContext);
     //==============================
     // Fullscreen shader program
     //==============================
@@ -401,6 +398,10 @@ void Renderer::renderOpenGL(){
     gl::glClear( gl::GL_DEPTH_BUFFER_BIT);
 
     //drawBorderRect(0,0,Scene::mousePos.x,Scene::mousePos.y,20,EngineAssets::tBorder);
+    AudioPluginAudioProcessorEditor::mainProcessEditor->mainUI.callDraw();
+
+    //TEST THING FOR SHOWING THE TEXTURE
+    if(juce::KeyPress::isKeyCurrentlyDown('g')) drawModelAt(EngineAssets::mTestSquare,Vec3(0.0f),Vec3(0.0f),{screenSize.x,screenSize.y,1.0f},0);
 
     //>>>>end of draw cals
     //=====================

@@ -56,9 +56,19 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
     mainRenderer.addMouseListener(this, true); 
     
     setResizable(true,true);
-    setSize (900, 900);
+    setSize(900, 900);
 
     addAndMakeVisible(mainRenderer);
+
+    //dont want to draw the base ui thing
+    mainUI.drawSelf=false;
+
+    //create ui stuff, will eventually make functions for this
+    UIObject& moduleListUI = UIManager::createChild(mainUI,UIObject());
+    moduleListUIOBJ = moduleListUI.ID;
+    moduleListUI.layout=LIST_VERTICAL;
+
+    resizeUI();
 }
 
 AudioPluginAudioProcessorEditor::~AudioPluginAudioProcessorEditor(){}
@@ -67,29 +77,52 @@ void AudioPluginAudioProcessorEditor::paint (juce::Graphics& g){}
 void AudioPluginAudioProcessorEditor::resized()
 {
     mainRenderer.setSize(getWidth(),getHeight());
+    resizeUI();
 }
+void AudioPluginAudioProcessorEditor::resizeUI()
+{
+    if(mainUI.children.size()<=0) return;
+    
+    constexpr float padding = 10.0f;
+    constexpr float padding2=padding*2.0f;
+
+    UIObject& moduleListUI = UIManager::getObj(moduleListUIOBJ);
+    moduleListUI.relativePosition = {padding,padding};
+    moduleListUI.relativeSize = {float(getWidth())-padding2,float(getHeight())-padding2};
+}
+//PROBABLY MOVE THIS LATER
+void AudioPluginAudioProcessorEditor::createModuleListUI()
+{
+    constexpr float listButtonSize = 40.0f;
+
+    UIManager::objects.reserve(ModuleManager::modules.size());      //prevent the objects from resizing and losing reference
+    UIObject& moduleListUI = UIManager::getObj(moduleListUIOBJ);
+
+    for(ModuleData& module : ModuleManager::modules){
+        //REPLACE THIS WITH A BUTTON LATER
+        UIObject& newOBJ = UIManager::createChild(moduleListUI,UIObject());
+        newOBJ.relativeSize.y = listButtonSize;
+        newOBJ.setText(module.name);
+        UIManager::makeInteractable(newOBJ);
+    }
+}
+
 void AudioPluginAudioProcessorEditor::onRendererLoad(){
-    //std::cout << "Rendererer started!\n";
-    //load textures
-    EngineAssets::tRack = textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("rack.png")));
-    EngineAssets::tCable = textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("cable.png")));
-    EngineAssets::tFont = textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("font_shaded.png")));
-
-    //ui textures
-    textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("ui_border_basic.png")));
-    EngineAssets::tBorder = textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("ui_border_metal.png")));
-
-    EngineAssets::tBlank = textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("blank.png")));
     
-    EngineAssets::tAxis = textureAtlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile("axis.png")));
-    
+    EngineAssets::loadModels();
+    EngineAssets::loadTextures(textureAtlas);
+
 
     FileManager::loadModules(mainRenderer,textureAtlas);
+
+    UIManager::styleUI();
     //finish the the
     mainRenderer.mainTextureImage = textureAtlas.getTextureSheet();
     mainRenderer.mainTextureAtlas = &textureAtlas;
 
     mainRenderer.setCameraPosition({0.0f,0.0f,10.0f});
+
+    createModuleListUI();
 
     #if DEBUG_CONSOLE_ENABLED
     Debugger::start();
@@ -102,7 +135,9 @@ void AudioPluginAudioProcessorEditor::mouseDrag(const juce::MouseEvent& event){u
 void AudioPluginAudioProcessorEditor::updateMouse(const juce::MouseEvent& event){
     Vec2 position = Vec2(event.position.x, event.position.y);
     Scene::mousePos=position;
-    //UIManager::updateMousePos(mainRenderer, position);
+    
+    UIManager::hover(position);
+
     HitboxManager::dragHitbox(position - previousMousePos,position);
 
     previousMousePos = position;

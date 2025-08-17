@@ -1,5 +1,6 @@
 #pragma once
 #include "EngineAssets.h"
+#include "Engine.h"
 
 namespace EngineAssets{
     Model mCablePort;
@@ -12,34 +13,52 @@ namespace EngineAssets{
     Model mBorderRectModel;
     //texture IDS
     int tBorder;
+    int tBorderHovered;
     int tFont;
+    int tFontHovered;
+    
     int tRack;
     int tBlank;
     int tCable;
 
     int tAxis;
 
-    void loadModel(Model& model, juce::OpenGLContext& context, const juce::String& fileName) {
+    void loadModel(Model& model, const juce::String& fileName) {
         auto file = FileManager::assetFolder.getChildFile(fileName);
         auto objStr = file.loadFileAsString().toStdString();
         auto parsed = parseOBJString(objStr);
 
-        model.createGeometry(context, parsed);
+        model.createGeometry(Engine::renderer->openGLContext, parsed);
     }
-    void loadAll(juce::OpenGLContext &openGLContext) {
-        loadModel(mCablePort,openGLContext,"cable_socket.obj");
-        loadModel(mCableEnd,openGLContext,"cable_end.obj");
+    void loadModels() {
+        loadModel(mCablePort,"cable_socket.obj");
+        loadModel(mCableEnd,"cable_end.obj");
         
         //primatives
-        loadModel(mCube,openGLContext,"cube.obj");
-        loadModel(mTestSquare,openGLContext,"test_square.obj");
+        loadModel(mCube,"cube.obj");
+        loadModel(mTestSquare,"test_square.obj");
 
         //debugging stuff
-        loadModel(mWireCube,openGLContext,"wireFrameCube.obj");
-        loadModel(mAxis,openGLContext,"axis.obj");
+        loadModel(mWireCube,"wireFrameCube.obj");
+        loadModel(mAxis,"axis.obj");
 
-        createCableModel(openGLContext);
-        createBorderRectModel(openGLContext);
+        createCableModel(Engine::renderer->openGLContext);
+        createBorderRectModel(Engine::renderer->openGLContext);
+    }
+    void loadTexture(TextureManager& atlas ,int& texture, const juce::String& fileName){
+        texture = atlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile(fileName)));
+    }
+    void loadTextures(TextureManager& atlas){
+        loadTexture(atlas,tRack,"rack.png");
+        loadTexture(atlas,tCable,"Cable.png");
+
+        loadTexture(atlas,tFont,"font_shaded.png");
+        loadTexture(atlas,tFontHovered,"font_shaded_inverse.png");
+        loadTexture(atlas,tBorder,"ui_border_fancy.png");
+        loadTexture(atlas,tBorderHovered,"ui_border_fancy_inverse.png");
+
+        loadTexture(atlas,tBlank,"blank.png");
+        loadTexture(atlas,tAxis,"axis.png");    
     }
     void createBorderRectModel(juce::OpenGLContext &openGLContext){
         std::vector<Vertex> vertices;
@@ -146,13 +165,13 @@ namespace EngineAssets{
         std::vector<uint8_t> cableGroups;
 
         //cable settings
-        const int cableModelGroups=16;
-        const int cableResolution = 6; //cables will be hexagons
-        const float cableRadius = 0.15f;
+        constexpr int cableModelGroups=16;
+        constexpr int cableResolution = 6; //cables will be hexagons
+        constexpr float cableRadius = 0.15f;
 
         //amount to spread uvs into: 3 would mean each face has a third of the uv
-        const int uvSpread = 2;
-        const float uvSpreadWidth = 1.0f/float(uvSpread);
+        constexpr int uvSpread = 2;
+        constexpr float uvSpreadWidth = 1.0f/float(uvSpread);
 
         int uvSpreadIndex = 0;
         for(uint8_t i=1;i<cableModelGroups;i++){
