@@ -30,10 +30,6 @@ public:
 
     static AudioPluginAudioProcessorEditor* mainProcessEditor;
 
-    //ui stuff for now, probably move later
-    UIObject mainUI = UIObject();   //main ui object
-    int moduleListUIOBJ=0;
-
 private:
     Vec2 previousMousePos;
     // This reference is provided as a quick way for your editor to
@@ -43,8 +39,6 @@ private:
     Renderer mainRenderer;
 
     void resizeUI();
-    
-    void createModuleListUI();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioPluginAudioProcessorEditor)
 };

@@ -1,7 +1,5 @@
 #pragma once
 #include "TextManager.h"
-#define DEBUG_MODE false
-#define DEBUG_EACH_CHAR false
 
 namespace TextManager{
     //5 eigths
@@ -27,6 +25,7 @@ namespace TextManager{
         widths[';' - 32] =  fract_3_8;
         widths['`' - 32] =  fract_3_8;
         widths['i' - 32] =  fract_3_8;
+        widths['l' - 32] =  0.5f;
 
         widths['"' - 32] = 4.0f / 8.0f;
         widths['#' - 32] = 6.0f / 8.0f;
@@ -36,7 +35,7 @@ namespace TextManager{
         widths['w' - 32] = fract_7_8;
         widths['W' - 32] = fract_7_8;
 
-        widths[' ' - 32] = 1.0f;
+        widths[' ' - 32] = 0.5f;
         
         return widths;
     }
@@ -45,9 +44,6 @@ namespace TextManager{
     //justification enumerators
     std::vector<Vertex> textMesh(std::string& text,float fontSize,Justification justify) {
         std::vector<Vertex> mesh;
-        #if DEBUG_MODE
-            std::cout << "generating text mesh..." << std::endl;
-        #endif
 
         //constants
         const int glyphsPerRow = 16;
@@ -65,14 +61,8 @@ namespace TextManager{
         //calculate how wide the final text will be
         //doesnt need to do this for justify left
         if(justify!=Justification::LEFT){
-            #if DEBUG_MODE
-            std::cout << "measuring..." << std::endl;
-            #endif
             
             for (char c : text) {
-                #if DEBUG_EACH_CHAR
-                    std::cout << c ;
-                #endif
                     
                     int ascii = static_cast<int>(c);
                     //skip invalid (non typable) characters
@@ -86,9 +76,7 @@ namespace TextManager{
                     finalTextWidth+=currentCharWidth;
             }
         }
-        #if DEBUG_EACH_CHAR
-            std::cout << std::endl;
-        #endif
+
 
         float justifyOffset=0.0f;
         switch(justify){
@@ -99,11 +87,8 @@ namespace TextManager{
             justifyOffset=finalTextWidth;
             break;
         }
-        #if DEBUG_MODE
-            std::cout << "generating..." << std::endl;
-        #endif
+
         for (char c : text) {
-                std::cout << c ;
                 int ascii = static_cast<int>(c);
 
                 //skip invalid (non typable) characters
@@ -169,9 +154,6 @@ namespace TextManager{
 
                 currentX+=currentCharWidth;
         }
-        #if DEBUG_EACH_CHAR
-            std::cout << std::endl;
-        #endif
 
         return mesh;
     }

@@ -4,7 +4,7 @@ OBJ_Scene* Engine::scene=nullptr;
 std::vector<std::unique_ptr<Object>> Engine::objects;
 std::vector<PhysicsObject*> Engine::physicsObjects;
 std::vector<OBJ_Comp_Socket*> Engine::sockets;
-
+Vec2 Engine::mousePosition;
 //engine renderer
 Renderer* Engine::renderer=nullptr;
 

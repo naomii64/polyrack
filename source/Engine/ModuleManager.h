@@ -10,6 +10,7 @@ struct ModuleData
 {
     std::string name="[MODULE NAME]";
     std::string description="[MODULE DESCRIPTION]";
+    std::string creator="[CREATOR OF MODULE]";
     std::vector<std::string> tags;
     juce::Array<juce::var> layout;
     int width;

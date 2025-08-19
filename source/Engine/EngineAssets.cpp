@@ -88,7 +88,6 @@ namespace EngineAssets{
                 case NineSlice::BOTTOM_RIGHT:
                     uvOffset=Vec2(2.0f,0.0f);
                     break;
-                
                 case NineSlice::MIDDLE_LEFT:
                     uvOffset=Vec2(0.0f,1.0f);
                     break;

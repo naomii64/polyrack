@@ -5,7 +5,6 @@
 //to import readvec3fromobj
 #include "../Engine/Objects/Object.h"
 
-
 //fileManager Variables
 juce::File FileManager::appDataFolder;
 juce::File FileManager::moduleFolder;
@@ -55,7 +54,6 @@ void FileManager::init() {
     //std::cout << "Assets folder: " << assetFolder.getFullPathName() << std::endl;
 }
 void FileManager::loadModules(Renderer& renderer,TextureManager& textureAtlas) {
-   
     //loop through all the modules
     for (auto& file : moduleFolder.findChildFiles(juce::File::findFiles, false))
     {
@@ -106,6 +104,7 @@ void FileManager::loadModules(Renderer& renderer,TextureManager& textureAtlas) {
             textureIDs.emplace_back(textureID);
         }
         //loop through the models tooooooo
+        moduleData.models.reserve(moduleModels->size());    //reserve upfront to fix bug where every model ends up being the final one
         for (const juce::var& model : *moduleModels){
             juce::String modelPath = model.getProperty("path", "[MISSING]");
             int textureIndex = static_cast<int>(model.getProperty("textureID", 0));
@@ -126,6 +125,7 @@ void FileManager::loadModules(Renderer& renderer,TextureManager& textureAtlas) {
             }
         }
         //now load the animations
+        moduleData.animations.reserve(moduleAnimations->size());    //also reserve this
         for(const juce::var& animation : *moduleAnimations){
             Animation& animationData = moduleData.animations.emplace_back();
             animationData.hitboxSize=readVec3FromObj(animation["hitboxSize"],Vec3(0.5f));

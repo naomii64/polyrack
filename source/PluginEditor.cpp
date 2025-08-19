@@ -4,7 +4,7 @@
 #include "Engine/Scene.h"
 
 #include "Engine/Hitboxes.h"
-
+#include "Engine/Engine.h"
 
 //for debug
 #define DEBUG_CONSOLE_ENABLED true
@@ -59,16 +59,6 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
     setSize(900, 900);
 
     addAndMakeVisible(mainRenderer);
-
-    //dont want to draw the base ui thing
-    mainUI.drawSelf=false;
-
-    //create ui stuff, will eventually make functions for this
-    UIObject& moduleListUI = UIManager::createChild(mainUI,UIObject());
-    moduleListUIOBJ = moduleListUI.ID;
-    moduleListUI.layout=LIST_VERTICAL;
-
-    resizeUI();
 }
 
 AudioPluginAudioProcessorEditor::~AudioPluginAudioProcessorEditor(){}
@@ -81,30 +71,7 @@ void AudioPluginAudioProcessorEditor::resized()
 }
 void AudioPluginAudioProcessorEditor::resizeUI()
 {
-    if(mainUI.children.size()<=0) return;
-    
-    constexpr float padding = 10.0f;
-    constexpr float padding2=padding*2.0f;
-
-    UIObject& moduleListUI = UIManager::getObj(moduleListUIOBJ);
-    moduleListUI.relativePosition = {padding,padding};
-    moduleListUI.relativeSize = {float(getWidth())-padding2,float(getHeight())-padding2};
-}
-//PROBABLY MOVE THIS LATER
-void AudioPluginAudioProcessorEditor::createModuleListUI()
-{
-    constexpr float listButtonSize = 40.0f;
-
-    UIManager::objects.reserve(ModuleManager::modules.size());      //prevent the objects from resizing and losing reference
-    UIObject& moduleListUI = UIManager::getObj(moduleListUIOBJ);
-
-    for(ModuleData& module : ModuleManager::modules){
-        //REPLACE THIS WITH A BUTTON LATER
-        UIObject& newOBJ = UIManager::createChild(moduleListUI,UIObject());
-        newOBJ.relativeSize.y = listButtonSize;
-        newOBJ.setText(module.name);
-        UIManager::makeInteractable(newOBJ);
-    }
+    UI::onResize(getWidth(),getHeight());
 }
 
 void AudioPluginAudioProcessorEditor::onRendererLoad(){
@@ -112,8 +79,10 @@ void AudioPluginAudioProcessorEditor::onRendererLoad(){
     EngineAssets::loadModels();
     EngineAssets::loadTextures(textureAtlas);
 
-
     FileManager::loadModules(mainRenderer,textureAtlas);
+
+    UI::initUI();
+    resizeUI();
 
     UIManager::styleUI();
     //finish the the
@@ -122,7 +91,7 @@ void AudioPluginAudioProcessorEditor::onRendererLoad(){
 
     mainRenderer.setCameraPosition({0.0f,0.0f,10.0f});
 
-    createModuleListUI();
+    UI::createModuleList();
 
     #if DEBUG_CONSOLE_ENABLED
     Debugger::start();
@@ -134,10 +103,12 @@ void AudioPluginAudioProcessorEditor::mouseMove(const juce::MouseEvent& event){u
 void AudioPluginAudioProcessorEditor::mouseDrag(const juce::MouseEvent& event){updateMouse(event);}
 void AudioPluginAudioProcessorEditor::updateMouse(const juce::MouseEvent& event){
     Vec2 position = Vec2(event.position.x, event.position.y);
+    
+    //eventually get rid of scene
+    Engine::mousePosition=position;
     Scene::mousePos=position;
     
     UIManager::hover(position);
-
     HitboxManager::dragHitbox(position - previousMousePos,position);
 
     previousMousePos = position;
@@ -155,19 +126,17 @@ void AudioPluginAudioProcessorEditor::mouseWheelMove(const juce::MouseEvent &eve
 }
 
 void AudioPluginAudioProcessorEditor::mouseDown(const juce::MouseEvent& event) {
-    if (event.mods.isRightButtonDown()) {
-        // Right mouse button was clicked
-        //TODO: redo ui
-        //UIManager::showGroup(UIManager::moduleSelectionGroup);
-    }
     if (event.mods.isLeftButtonDown()) {
         // Right mouse button was clicked
-        //UIManager::click(event);
+        UIManager::mouseDown();
+        if(UIManager::hoveredObject!=-1) return;
         HitboxManager::click(mainRenderer,event);
     }
 }
 
 void AudioPluginAudioProcessorEditor::mouseUp(const juce::MouseEvent &event)
 {
+    UIManager::mouseUp();
     HitboxManager::mouseUp(event);
+    UIManager::hover(Engine::mousePosition);
 }

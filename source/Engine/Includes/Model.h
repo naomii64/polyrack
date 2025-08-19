@@ -15,16 +15,19 @@ public:
     //group stuff
     GLuint groupVBO = 0;
     bool hasGroupBuffer = false;
+    juce::OpenGLContext* context;
 
     Model(){}
     ~Model() {
-        //auto& gl = scene.openGLComponent.getContext().extensions;
-        //if (vbo != 0) gl.glDeleteBuffers(1, &vbo);
+        if(!context) return;
+        auto& gl =  context->extensions;
+        if (vbo != 0) gl.glDeleteBuffers(1, &vbo);
     }
-    // Create geometry from a vertex buffer only (no index buffer)
-    void createGeometry(juce::OpenGLContext& openGLContext, const std::vector<Vertex>& vertexBuffer, const std::vector<uint8_t>& groupBuffer = {}) {
+
+    void createGeometry(juce::OpenGLContext& openGLContext, std::vector<Vertex> vertexBuffer, const std::vector<uint8_t>& groupBuffer = {}) {
         auto& gl = openGLContext.extensions;
-        
+        context=&openGLContext;
+
         if (vbo == 0) gl.glGenBuffers(1, &vbo);
 
         gl.glBindBuffer(juce::gl::GL_ARRAY_BUFFER, vbo);

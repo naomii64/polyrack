@@ -34,4 +34,5 @@ class Engine{
         //Engine deltatime
         static double deltaTime;
         static inline const Vec3 GRAVITY={0.0f,-98.0f,0.0f};
+        static Vec2 mousePosition;
 };
