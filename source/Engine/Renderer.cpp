@@ -95,17 +95,17 @@ Renderer::~Renderer(){
 //========================//
 
 //draws a model with a given transform without modifying it. great for models that get reused
-void Renderer::drawModelAt(Model& model, Vec3 position, Vec3 rotation, Vec3 scale,int textureID,Vec4 tint){
-    Vec3 usedScale=scale;
+void Renderer::drawModelAt(Model& model, Vec3f position, Vec3f rotation, Vec3f scale,int textureID,Vec4f tint){
+    Vec3f usedScale=scale;
     if(invertY){
         usedScale.y*=-1.0f;
     }
-    Mat4 mat=Model::getTransformMatrix(position,rotation,usedScale);
-    Mat4 nmat=Model::getModelNormalMatrix(rotation);
+    Mat4f mat=Mat4f::transform(position,rotation,scale);
+    Mat4f nmat{};
+    
     drawModelWithMatrix(model,mat,nmat,textureID);
-
 }
-void Renderer::drawModelWithMatrix(Model &model, Mat4 &matrix,Mat4 &normalMatrix, int textureID)
+void Renderer::drawModelWithMatrix(Model &model, Mat4f &matrix,Mat4f &normalMatrix, int textureID)
 {
 
         auto& gl = openGLContext.extensions;
@@ -149,24 +149,19 @@ void Renderer::drawModelWithMatrix(Model &model, Mat4 &matrix,Mat4 &normalMatrix
         gl.glDisableVertexAttribArray(3);
         gl.glDisableVertexAttribArray(4);
 }
-void Renderer::drawModel(Model &model)
-{
-    drawModelAt(model,model.position,model.rotation,model.scale);
-}
-
 //ui related ones
-void Renderer::drawRect(float x, float y, float width, float height, int textureID, Vec4 tint) {
+void Renderer::drawRect(float x, float y, float width, float height, int textureID, Vec4f tint) {
     constexpr float z = -1.0f;
     constexpr float depth = 1.0f;
 
-    const Vec3 position = {x, y, z};
-    const Vec3 rotation = {0.0f, 0.0f, 0.0f}; // or a named constant like NO_ROTATION
-    const Vec3 scale = {width, height, depth};
+    const Vec3f position = {x, y, z};
+    const Vec3f rotation = {0.0f, 0.0f, 0.0f}; // or a named constant like NO_ROTATION
+    const Vec3f scale = {width, height, depth};
 
     drawModelAt(EngineAssets::mTestSquare, position, rotation, scale,textureID,tint);
 }
 
-void Renderer::drawBorderRect(float x, float y, float width, float height, float borderWidth , int textureID, Vec4 tint) {
+void Renderer::drawBorderRect(float x, float y, float width, float height, float borderWidth , int textureID, Vec4f tint) {
     //still probably too much math for a simple rectange, might optimize later
     //probably make a class that stores all this and only recalculates when things change
     //i have no idea why down being +y and -y is inconsistent
@@ -178,64 +173,64 @@ void Renderer::drawBorderRect(float x, float y, float width, float height, float
     const float usedHeight = std::max(height,borderWidth2);
     const float usedWidth = std::max(width,borderWidth2);
     
-    const Vec3 position = {x, y, z};
-    const Vec3 rotation = {0.0f, 0.0f, 0.0f};
-    const Vec3 scale(1.0f);
+    const Vec3f position = {x, y, z};
+    const Vec3f rotation = {0.0f, 0.0f, 0.0f};
+    const Vec3f scale(1.0f);
 
 
-    std::vector<Mat4> matrices;
+    std::vector<Mat4f> matrices;
     for(int i=0;i<17;i++)matrices.emplace_back();
 
-    const Mat4 cornerScale = Mat4::scaling(Vec3(borderWidth));
-    const Mat4 verticalBarScale = Mat4::scaling(Vec3(borderWidth,usedHeight-borderWidth2,1.0f));
-    const Mat4 horizontalBarScale = Mat4::scaling(Vec3(usedWidth-borderWidth2,borderWidth,1.0f));
+    const Mat4f cornerScale = Mat4f::scaling(Vec3f(borderWidth));
+    const Mat4f verticalBarScale = Mat4f::scaling(Vec3f(borderWidth,usedHeight-borderWidth2,1.0f));
+    const Mat4f horizontalBarScale = Mat4f::scaling(Vec3f(usedWidth-borderWidth2,borderWidth,1.0f));
     
 
     const float rightXvalue = usedWidth-borderWidth;
     const float bottomYvalue = -usedHeight+borderWidth;
 
     matrices[NineSlice::TOP_LEFT+1]=cornerScale;
-    matrices[NineSlice::BOTTOM_RIGHT+1]=Mat4::translation(rightXvalue,bottomYvalue,0.0f)*cornerScale;
-    matrices[NineSlice::BOTTOM_LEFT+1]=Mat4::translation(0.0f,bottomYvalue,0.0f)*cornerScale;
-    matrices[NineSlice::TOP_RIGHT+1]=Mat4::translation(rightXvalue,0.0f,0.0f)*cornerScale;
+    matrices[NineSlice::BOTTOM_RIGHT+1]=Mat4f::translation(rightXvalue,bottomYvalue,0.0f)*cornerScale;
+    matrices[NineSlice::BOTTOM_LEFT+1]=Mat4f::translation(0.0f,bottomYvalue,0.0f)*cornerScale;
+    matrices[NineSlice::TOP_RIGHT+1]=Mat4f::translation(rightXvalue,0.0f,0.0f)*cornerScale;
     
-    matrices[NineSlice::TOP_MIDDLE+1]=Mat4::translation(borderWidth,0.0f,0.0f)*horizontalBarScale;
-    matrices[NineSlice::BOTTOM_MIDDLE+1]=Mat4::translation(borderWidth,bottomYvalue,0.0f)*horizontalBarScale;
+    matrices[NineSlice::TOP_MIDDLE+1]=Mat4f::translation(borderWidth,0.0f,0.0f)*horizontalBarScale;
+    matrices[NineSlice::BOTTOM_MIDDLE+1]=Mat4f::translation(borderWidth,bottomYvalue,0.0f)*horizontalBarScale;
 
-    matrices[NineSlice::MIDDLE_RIGHT+1]=Mat4::translation(rightXvalue,-borderWidth,0.0f)*verticalBarScale;
-    matrices[NineSlice::MIDDLE_LEFT+1]=Mat4::translation(0.0f,-borderWidth,0.0f)*verticalBarScale;
+    matrices[NineSlice::MIDDLE_RIGHT+1]=Mat4f::translation(rightXvalue,-borderWidth,0.0f)*verticalBarScale;
+    matrices[NineSlice::MIDDLE_LEFT+1]=Mat4f::translation(0.0f,-borderWidth,0.0f)*verticalBarScale;
 
-    matrices[NineSlice::MIDDLE_MIDDLE+1]=Mat4::translation(borderWidth,-borderWidth,0.0f)* Mat4::scaling(usedWidth-borderWidth2,usedHeight-borderWidth2,0.0f);
+    matrices[NineSlice::MIDDLE_MIDDLE+1]=Mat4f::translation(borderWidth,-borderWidth,0.0f)* Mat4f::scaling(usedWidth-borderWidth2,usedHeight-borderWidth2,0.0f);
 
     uploadMatrixList(matrices);
 
     drawModelAt(EngineAssets::mBorderRectModel, position, rotation, scale,textureID,tint);
 }
 
-void Renderer::setUVMatrix(Mat3 matrix)
+void Renderer::setUVMatrix(Mat3f matrix)
 {
     shaderProgram->setUniformMat3("uTexCoordMatrix",matrix.data,1,false);
 }
 
-Ray Renderer::rayFrom(Vec2 screenPos)
+Ray Renderer::rayFrom(Vec2f screenPos)
 {
-    return screenToWorldRay(screenPos,cameraMatrix,projectionMatrix,Vec2(float(getWidth()),float(getHeight())));
+    return screenToWorldRay(screenPos,cameraMatrix,projectionMatrix,Vec2f(float(getWidth()),float(getHeight())));
 }
 
-Vec2 Renderer::getPixelSize(){
-    return Vec2(screenSpaceSize.x/getWidth(),screenSpaceSize.y/getHeight());
+Vec2f Renderer::getPixelSize(){
+    return Vec2f(screenSpaceSize.x/getWidth(),screenSpaceSize.y/getHeight());
 }
 
-void Renderer::setCameraPosition(Vec3 position,Vec3 rotation)
+void Renderer::setCameraPosition(Vec3f position,Vec3f rotation)
 {
 
-    Mat4 translate = Mat4::translation(position*-1.0f);
-    Mat4 rotate = Mat4::rotation(rotation).fastInverseRT();
+    Mat4f translate = Mat4f::translation(position*-1.0f);
+    Mat4f rotate = Mat4f::rotation(rotation).fastInverseRT();
 
     cameraMatrix=rotate*translate;
 }
 
-void Renderer::uploadMatrixList(std::vector<Mat4>& matrices)
+void Renderer::uploadMatrixList(std::vector<Mat4f>& matrices)
 {
     #define gl juce::gl
         
@@ -248,11 +243,11 @@ void Renderer::uploadMatrixList(std::vector<Mat4>& matrices)
     //const int floatLength = matrixCount * 16;
     GLfloat data[17 * 16]; //there are 17 matrices
 
-    // Flatten Mat4 list into float array
+    // Flatten Mat4f list into float array
     for (int i = 0; i < matrixCount; ++i) {
-        const Mat4& m = matrices[i];
+        const Mat4f& m = matrices[i];
         for (int j = 0; j < 16; ++j) {
-            data[i * 16 + j] = m.data[j]; // assumes your Mat4 has float data[16]
+            data[i * 16 + j] = m.data[j]; // assumes your Mat4f has float data[16]
         }
     }
 
@@ -393,14 +388,14 @@ void Renderer::renderOpenGL(){
 
     //prepare to draw the ui
     disablePerspective();
-    shaderProgram->setUniformMat4("uViewMatrix", Mat4::identity, 1, gl::GL_FALSE);
+    shaderProgram->setUniformMat4("uViewMatrix", Mat4f::identity, 1, gl::GL_FALSE);
 
     gl::glClear( gl::GL_DEPTH_BUFFER_BIT);
 
     UI::mainUI.callDraw();
 
     //TEST THING FOR SHOWING THE TEXTURE
-    if(juce::KeyPress::isKeyCurrentlyDown('g')) drawModelAt(EngineAssets::mTestSquare,Vec3(0.0f),Vec3(0.0f),{screenSize.x,screenSize.y,1.0f},0);
+    if(juce::KeyPress::isKeyCurrentlyDown('g')) drawModelAt(EngineAssets::mTestSquare,Vec3f(0.0f),Vec3f(0.0f),{screenSize.x,screenSize.y,1.0f},0);
 
     //>>>>end of draw cals
     //=====================
@@ -434,15 +429,15 @@ void Renderer::createTextureRectsFromAtlas(TextureManager& atlas){
         std::cout << "failed to bind texture uvs: Texture atlas is null" << std::endl;
         return;
     }
-    std::vector<Vec4>& textureRects = atlas.textureCoords;
+    std::vector<Vec4f>& textureRects = atlas.textureCoords;
     //for now the glFloat holds a max of 64 textures for now
     const int floatLength = 64*4;
     GLfloat data[floatLength];
     //fill the data in
-    // 2. Flatten the Vec4 list into a float array
+    // 2. Flatten the Vec4f list into a float array
     const int textureCount = int(textureRects.size());
     for(int i=0;i<textureCount;i++){
-        Vec4& currentTextureRect = textureRects[i];
+        Vec4f& currentTextureRect = textureRects[i];
         int ix4=i*4;
         data[ix4]=currentTextureRect.x;
         //textures are being loaded in reverse order for some reason on the y
@@ -469,10 +464,10 @@ void Renderer::updateProjectionMatrix(){
     float newAspect = float(getWidth()) / float(getHeight());
     if (aspect != newAspect) {
         aspect = newAspect;
-        projectionMatrix = Mat4::makePerspectiveMatrix(fov, aspect, 0.1f, 1000.0f);
+        projectionMatrix = Mat4f::makePerspectiveMatrix(fov, aspect, 0.1f, 1000.0f);
         //used for ui, maps coords in pixels instead of 3d space
-        Vec2 pixelSize=getPixelSize();
-        orthographicMatrix = Mat4{
+        Vec2f pixelSize=getPixelSize();
+        orthographicMatrix = Mat4f{
             2.0f/getWidth(),0.0f,0.0f,-1.0f,
             0.0f,-2.0f/getHeight(),0.0f,1.0f,
             0.0f,0.0f,0.0f,1.0f,

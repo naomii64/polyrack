@@ -9,7 +9,7 @@
 class Renderer;
 
 // struct ModuleInstance{
-//     Vec3 position;
+//     Vec3f position;
 //     const ModuleData* moduleData;
 //     std::vector<std::unique_ptr<Component>> components;
 
@@ -39,11 +39,11 @@ class Scene{
         //camera settings
         static float zoom;
         static float realZoom;
-        static Vec2 panVelocity;
-        static Vec2 panPosition;
+        static Vec2f panVelocity;
+        static Vec2f panPosition;
         static float maxPanVelocity;
         static float panAcceleartion;
 
         //will probably move later so mouse pos is always in one place
-        static Vec2 mousePos;
+        static Vec2f mousePos;
 };

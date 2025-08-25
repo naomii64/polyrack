@@ -102,7 +102,7 @@ void AudioPluginAudioProcessorEditor::onRendererLoad(){
 void AudioPluginAudioProcessorEditor::mouseMove(const juce::MouseEvent& event){updateMouse(event);}
 void AudioPluginAudioProcessorEditor::mouseDrag(const juce::MouseEvent& event){updateMouse(event);}
 void AudioPluginAudioProcessorEditor::updateMouse(const juce::MouseEvent& event){
-    Vec2 position = Vec2(event.position.x, event.position.y);
+    Vec2f position = Vec2f(event.position.x, event.position.y);
     
     //eventually get rid of scene
     Engine::mousePosition=position;
@@ -130,7 +130,11 @@ void AudioPluginAudioProcessorEditor::mouseDown(const juce::MouseEvent& event) {
         // Right mouse button was clicked
         UIManager::mouseDown();
         if(UIManager::hoveredObject!=-1) return;
-        HitboxManager::click(mainRenderer,event);
+        HitboxManager::leftMouseDown();
+    }
+    if (event.mods.isRightButtonDown()) {
+        if(UIManager::hoveredObject!=-1) return;
+        HitboxManager::rightMouseDown();
     }
 }
 

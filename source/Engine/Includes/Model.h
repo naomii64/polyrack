@@ -1,4 +1,5 @@
 #pragma once
+
 //juce imports
 #include "juce_opengl/juce_opengl.h"
 //engine imports
@@ -48,18 +49,6 @@ public:
             hasGroupBuffer = false;
         }
     }
-    // Transform data
-	Vec3 position{ 0.0f, 0.0f, 0.0f };
-	Vec3 rotation{ 0.0f, 0.0f, 0.0f };
-	Vec3 scale{ 1.0f, 1.0f, 1.0f };
 
     int textureID = 0;
-
-    //static functions for drawing the model
-    static Mat4 getTransformMatrix(Vec3 position, Vec3 rotation, Vec3 scale){
-        return Mat4::translation(position) * Mat4::rotation(rotation) * Mat4::scaling(scale);
-    }
-    static Mat4 getModelNormalMatrix(Vec3 rotation){
-        return Mat4::rotation(rotation).fastInverseRT();
-    }
 };

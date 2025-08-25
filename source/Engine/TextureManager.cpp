@@ -29,17 +29,17 @@ juce::Image TextureManager::getTextureSheet() {
     //calculate the scale factors
     const float scaleFactorX=1.0f/atlas.getWidth();
     const float scaleFactorY=1.0f/atlas.getHeight();
-    const Vec4 scaleVector(scaleFactorX,scaleFactorY,scaleFactorX,scaleFactorY);
+    const Vec4f scaleVector(scaleFactorX,scaleFactorY,scaleFactorX,scaleFactorY);
 
     //reset the texture coord vector
     textureCoords.clear();
     //reserve a uv for each texture plus the default texture
     textureCoords.reserve(textures.size()+1);
     //add default texture that covers the whole sheet
-    textureCoords.emplace_back(Vec4(0.0f,0.0f,1.0f,1.0f));
+    textureCoords.emplace_back(Vec4f(0.0f,0.0f,1.0f,1.0f));
     
     for(juce::Image texture:textures){
-        const Vec4 texturePosAndSize(
+        const Vec4f texturePosAndSize(
             0.0f,
             float(currentY),
             float(texture.getWidth()),
@@ -52,7 +52,7 @@ juce::Image TextureManager::getTextureSheet() {
             texturePosAndSize.z,
             texturePosAndSize.w
         ));
-        Vec4 newUV;
+        Vec4f newUV;
         newUV = texturePosAndSize*scaleVector;
         //add the uvs, scaled to 0 to 1
         textureCoords.emplace_back(newUV);

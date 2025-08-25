@@ -4,7 +4,7 @@ OBJ_Scene* Engine::scene=nullptr;
 std::vector<std::unique_ptr<Object>> Engine::objects;
 std::vector<PhysicsObject*> Engine::physicsObjects;
 std::vector<OBJ_Comp_Socket*> Engine::sockets;
-Vec2 Engine::mousePosition;
+Vec2f Engine::mousePosition;
 //engine renderer
 Renderer* Engine::renderer=nullptr;
 
@@ -43,7 +43,7 @@ void Engine::init(){
         physicsObjects.push_back(&newObj);
         int cablePoints=16;
         newObj.desiredDistance=1.0f;
-        newObj.createCable(cablePoints,Vec3(0.0f),Vec3(1.0f));
+        newObj.createCable(cablePoints,Vec3f(0.0f),Vec3f(1.0f));
         
         newObj.points[0].position={float(i),0.0f,0.0f};
 
@@ -57,13 +57,13 @@ void Engine::draw(){
     scene->callDraw();
 }
 
-Vec3 Engine::screenPosToZPlane(Vec2 screenPos,float zValue)
+Vec3f Engine::screenPosToZPlane(Vec2f screenPos,float zValue)
 {
         //THIS COULD PROBABLY BE MADE FASTER
 
         //calculate where it intersects the given z value
         Ray ray = Engine::renderer->rayFrom(screenPos);        
-        Vec3 targetPosition = ray.direction;
+        Vec3f targetPosition = ray.direction;
         
         //find the difference
         float difference = zValue-ray.origin.z;

@@ -9,14 +9,14 @@
 //camera settings
 float Scene::zoom=10.0f;
 float Scene::realZoom=Scene::zoom;
-Vec2 Scene::panPosition;
-Vec2 Scene::panVelocity;
+Vec2f Scene::panPosition;
+Vec2f Scene::panVelocity;
 
 //constants
 float Scene::maxPanVelocity=1.0f;
 float Scene::panAcceleartion=0.01f;
 
-Vec2 Scene::mousePos;
+Vec2f Scene::mousePos;
 
 //functions
 // void Scene::addModuleFromData(const ModuleData &data)
@@ -33,15 +33,15 @@ Vec2 Scene::mousePos;
 
 //runs every frame before drawing
 void Scene::applyCameraSettings(Renderer& renderer){
-    Vec3 cameraPos;
-    Vec3 cameraRot;
+    Vec3f cameraPos;
+    Vec3f cameraRot;
 
     //zoom
     realZoom=Math::lerp(realZoom,zoom,0.5f);    
     cameraPos.z=realZoom;
 
     //pan
-    Vec2 input;
+    Vec2f input;
     panVelocity*=0.9f;
     if(juce::KeyPress::isKeyCurrentlyDown('w')){input.y++;}
     if(juce::KeyPress::isKeyCurrentlyDown('s')){input.y--;}
@@ -58,7 +58,7 @@ void Scene::applyCameraSettings(Renderer& renderer){
     /*
     //degrees
     const float lookTurnAmount = 2.5f;
-    Vec2 normalizedMousePos=((mousePos/renderer.screenSize)-Vec2(0.5f))*2.0f;
+    Vec2f normalizedMousePos=((mousePos/renderer.screenSize)-Vec2f(0.5f))*2.0f;
 
     cameraRot.y=-normalizedMousePos.x*lookTurnAmount*(juce::MathConstants<float>::pi/180.0f);
     cameraRot.x=-normalizedMousePos.y*lookTurnAmount*(juce::MathConstants<float>::pi/180.0f);

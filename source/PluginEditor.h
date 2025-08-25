@@ -31,7 +31,7 @@ public:
     static AudioPluginAudioProcessorEditor* mainProcessEditor;
 
 private:
-    Vec2 previousMousePos;
+    Vec2f previousMousePos;
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     AudioPluginAudioProcessor& processorRef;

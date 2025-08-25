@@ -4,9 +4,9 @@
 #include "DataTypes.h"
 
 inline std::vector<Vertex> parseOBJString(const std::string& objString) {
-    std::vector<Vec3> positions;
-    std::vector<Vec3> normals;
-    std::vector<Vec2> texcoords;
+    std::vector<Vec3f> positions;
+    std::vector<Vec3f> normals;
+    std::vector<Vec2f> texcoords;
     std::vector<Vertex> vertices;
 
     std::istringstream stream(objString);
@@ -46,7 +46,7 @@ inline std::vector<Vertex> parseOBJString(const std::string& objString) {
                     v.v = texcoords[tIdx - 1].y;
                 }
 
-                v.rgb = {1.0f, 1.0f, 1.0f}; // Default white
+                v.rgb = Vec3f{1.0f, 1.0f, 1.0f}; // Default white
                 v.a = 1.0f;
 
                 vertices.push_back(v);

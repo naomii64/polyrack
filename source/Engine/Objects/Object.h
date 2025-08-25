@@ -13,16 +13,19 @@ class Object{
         ~Object();
         //transforms
         Transform transform;
-        Mat4 matrix;
-        Mat4 normalMatrix;
+        Mat4f matrix;
+        Mat4f normalMatrix;
 
-        Vec3 worldTranslation;
+        Vec3f worldTranslation;
         //tree structure
         std::vector<Object*> children;
         Object* parent;
         //functions
         void updateMatrix();
 
+        virtual void deleteObj();
+
+        bool active=true;/*if an object is active, if it isnt it can be replaced by another object*/
         //drawing
         //draws the object as well as all its children
         void callDraw();
@@ -31,10 +34,10 @@ class Object{
 
         virtual void onTransformChange();
 
-        void setPosition(Vec3 newPosition);
-        void setScale(Vec3 newScale);
-        void setRotation(Vec3 newRotation);
-        void setTransform(Vec3 newPosition, Vec3 newRotation, Vec3 newScale);
+        void setPosition(Vec3f newPosition);
+        void setScale(Vec3f newScale);
+        void setRotation(Vec3f newRotation);
+        void setTransform(Vec3f newPosition, Vec3f newRotation, Vec3f newScale);
 
         void addChild(Object* child);
     private:
@@ -63,8 +66,10 @@ class OBJ_Module : public Object{
 
         int mainHitboxID;
 
+        void deleteObj() override;/*deletes the object from drawing idk*/
+
         //stores the unrounded position so that it can be rounded
-        Vec3 truePosition;
+        Vec3f truePosition;
 
         void onTransformChange() override;
 };
@@ -86,28 +91,30 @@ class OBJ_Comp_Socket : public OBJ_Component{
         void initComponent(const juce::var& fromObject,ModuleData& moduleData) override;
         void onTransformChange() override;
         CablePoint* connectedPoint;
+        void deleteObj() override;
 };
 class OBJ_Comp_Input : public OBJ_Component{
     public:
         void onDraw() override;
         Animation* animation;
-        Vec2 values;
+        Vec2f values;
         int hitboxID;
         void onTransformChange() override;
         void initComponent(const juce::var& fromObject,ModuleData& moduleData) override;
+        void deleteObj() override;
 };
 //physics objects
 struct CablePoint{
-    Vec3 position;
-    Vec3 previousPosition;
+    Vec3f position;
+    Vec3f previousPosition;
     bool fixed;
     bool lockRotation;
 
     //might replace later with storing the matrix
-    Vec3 rotation;
+    Vec3f rotation;
 
-    Mat4 matrix;
-    Mat4 inverseRotationMatrix;
+    Mat4f matrix;
+    Mat4f inverseRotationMatrix;
 
     //these are only really needed for the first and last point
     bool isFirst;
@@ -125,7 +132,7 @@ class POBJ_Cable : public PhysicsObject{
         void physicsTick(float delta) override;
         void onDraw() override;
         
-        void createCable(int pointCount,Vec3 start={0.0f,0.0f,0.0f},Vec3 end={0.0f,0.0f,0.0f});
+        void createCable(int pointCount,Vec3f start={0.0f,0.0f,0.0f},Vec3f end={0.0f,0.0f,0.0f});
         
         //Creates a hitbox for the corresponding point and returns the hitbox ID
         int createPointHitbox(CablePoint& point);
@@ -142,7 +149,7 @@ class POBJ_Cable : public PhysicsObject{
     private:
         bool hasBeenCreated=false;
         int cableVariant;
-        Mat3 cableTextureMatrix;
+        Mat3f cableTextureMatrix;
         //separate physics into steps for readability
         void applyGravityAndMomentum(float delta);
         void applyConstraints();
@@ -157,9 +164,9 @@ inline float getArrayValueOr(const juce::Array<juce::var>* arr, int index, float
         return (float)arr->getUnchecked(index);
     return defaultVal;
 }
-inline Vec3 readVec3FromObj(const juce::var& obj, Vec3 defaultValues = { 0.0f, 0.0f, 0.0f }) {
+inline Vec3f readVec3FromObj(const juce::var& obj, Vec3f defaultValues = { 0.0f, 0.0f, 0.0f }) {
     juce::Array<juce::var>* arr = obj.getArray();
-    return Vec3(
+    return Vec3f(
         getArrayValueOr(arr, 0, defaultValues.x),
         getArrayValueOr(arr, 1, defaultValues.y),
         getArrayValueOr(arr, 2, defaultValues.z)

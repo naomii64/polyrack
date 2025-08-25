@@ -8,11 +8,13 @@ class Renderer;
 
 struct Hitbox
 {
-    Vec3 bounds;
-    Vec3 position;
-    std::function<void(Vec2 delta,Vec2 mousePos)> onDrag;
+    Vec3f bounds;
+    Vec3f position;
+    std::function<void(Vec2f delta,Vec2f mousePos)> onDrag;
     std::function<void()> mouseDown;
     std::function<void()> mouseUp;
+    std::function<void()> rightClick;
+    bool active=true;/*if false, a hitbox is disabled and can be overritten*/
 
     #if draw_hitboxes
     Model model;
@@ -33,8 +35,13 @@ public:
     Useful to avoid hitboxes moving around in memory.
     */
     static int createHitboxID();
-    static void click(Renderer& renderer,juce::MouseEvent event);
+    static void deleteHitbox(int hitboxID);
+    static void leftMouseDown();
+    static void rightMouseDown();
     static void mouseUp(juce::MouseEvent event);
-    static void dragHitbox(Vec2 delta,Vec2 mousePos);
+    static void dragHitbox(Vec2f delta,Vec2f mousePos);
+    static Hitbox* getHitboxUnderPixel(Vec2f pixel);
     static Hitbox* selectedHitbox;
+
+    static int deletedHitboxes;
 };

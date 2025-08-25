@@ -26,19 +26,18 @@ public:
 	bool canBeSeen();
     void disablePerspective();
 
-    void drawModel(Model &model);
     void drawModelAt(
 		Model& model, 
-		Vec3 position = {0.0f,0.0f,0.0f}, 
-		Vec3 rotation = {0.0f,0.0f,0.0f}, 
-		Vec3 scale = {1.0f,1.0f,1.0f}, 
+		Vec3f position = {0.0f,0.0f,0.0f}, 
+		Vec3f rotation = {0.0f,0.0f,0.0f}, 
+		Vec3f scale = {1.0f,1.0f,1.0f}, 
 		int textureID=0,
-		Vec4 tint = {1.0f,1.0f,1.0f,1.0f}
+		Vec4f tint = {1.0f,1.0f,1.0f,1.0f}
 	);
 	void drawModelWithMatrix(
 		Model &model, 
-		Mat4 &matrix,
-		Mat4 &normalMatrix=Mat4(),
+		Mat4f &matrix,
+		Mat4f &normalMatrix,
 		int textureID=0
 	);
 	void resizeBuffer(unsigned int newWidth,unsigned int newHeight);
@@ -50,7 +49,7 @@ public:
 		float width,
 		float height,
 		int textureID=0,
-		Vec4 tint = {1.0f,1.0f,1.0f,1.0f}
+		Vec4f tint = {1.0f,1.0f,1.0f,1.0f}
 	);
     void drawBorderRect(
 		float x, 
@@ -59,14 +58,14 @@ public:
 		float height, 
 		float borderWidth, 
 		int textureID=0,
-		Vec4 tint = {1.0f,1.0f,1.0f,1.0f}
+		Vec4f tint = {1.0f,1.0f,1.0f,1.0f}
 	);
 
-	void setUVMatrix(Mat3 matrix);
+	void setUVMatrix(Mat3f matrix);
 
-	Ray rayFrom(Vec2 screenPos);
+	Ray rayFrom(Vec2f screenPos);
 
-    Vec2 getPixelSize();
+    Vec2f getPixelSize();
 
     //juces
 	juce::Image mainTextureImage=juce::Image();
@@ -78,14 +77,14 @@ public:
 
 	//for easier acessing
 	/*Screen size in pixels*/
-	Vec2 screenSize{1.0f,1.0f};
+	Vec2f screenSize{1.0f,1.0f};
 	/*Normalized screen size (from -1.0 to 1.0 on the y)*/
-	Vec2 screenSpaceSize{2.0f,2.0f};
+	Vec2f screenSpaceSize{2.0f,2.0f};
 	
 	bool invertY=false;
 
-	void setCameraPosition(Vec3 position,Vec3 rotation={0.0f,0.0f,0.0f});
-	void uploadMatrixList(std::vector<Mat4>& matrices);
+	void setCameraPosition(Vec3f position,Vec3f rotation={0.0f,0.0f,0.0f});
+	void uploadMatrixList(std::vector<Mat4f>& matrices);
 
 	// //for typing and debugging
     // bool keyPressed(const juce::KeyPress& key) override {
@@ -114,10 +113,10 @@ private:
 	float aspect = 0;
 	float fov = 90;
 
-	Mat4 cameraMatrix;
+	Mat4f cameraMatrix;
 
-    Mat4 projectionMatrix;
-	Mat4 orthographicMatrix;
+    Mat4f projectionMatrix;
+	Mat4f orthographicMatrix;
 
 	GLuint fullscreenVAO = 0;
 	GLuint fullscreenVBO = 0;

@@ -18,8 +18,8 @@ void UIObject::onDraw(){
         stylePtr=&UIManager::style.normal;
     }
 
-    Vec2& position = screenPositionPixels;
-    Vec2& size = screenSizePixels;
+    Vec2f& position = screenPositionPixels;
+    Vec2f& size = screenSizePixels;
 
     constexpr float borderWidth = 10.0f;
 
@@ -30,9 +30,9 @@ void UIObject::onDraw(){
         stylePtr->background
     );
 
-    Vec3 textDrawLocation(0.0f);
-    Vec3 textDrawScale(1.0f);
-    Vec3 textDrawRotation(0.0f);
+    Vec3f textDrawLocation(0.0f);
+    Vec3f textDrawScale(1.0f);
+    Vec3f textDrawRotation(0.0f);
     
     textDrawLocation.x=screenPositionPixels.x+padding;
     textDrawLocation.y=screenPositionPixels.y-padding+screenSizePixels.y;
@@ -45,6 +45,7 @@ void UIObject::onDraw(){
         stylePtr->font
     );
 }
+
 void UIObject::updateText()
 {
     std::vector<Vertex> geometry = TextManager::textMesh(textContent,fontSize);
@@ -62,7 +63,6 @@ void UIObject::layout_none()
         UIObject& child = UIManager::objects[childID];
         child.screenPositionPixels=child.relativePosition;
         child.screenSizePixels=child.relativeSize;
-    
         child.callDraw();
     }
 }
@@ -76,11 +76,13 @@ void UIObject::layout_listVertical()
     
     float verticalOffset=screenPositionPixels.y+padding;
     
+    float childrenSize=0.0f;
+
     for(int& childID : children){
         UIObject& child = UIManager::objects[childID];
         if(!child.visible)continue;
-        Vec2& position = child.screenPositionPixels;
-        Vec2& size = child.screenSizePixels;
+        Vec2f& position = child.screenPositionPixels;
+        Vec2f& size = child.screenSizePixels;
 
         position.x=listX;
         position.y=verticalOffset;        
@@ -89,8 +91,11 @@ void UIObject::layout_listVertical()
         size.y=child.relativeSize.y;
 
         verticalOffset+=size.y;
+        
+        if(resizeToFitContent) childrenSize+=size.y;
         child.callDraw();
     }
+    if(resizeToFitContent) relativeSize.y=childrenSize+(padding*2.0f);
 }
 void UIObject::layout_splitHorizontal()
 {
@@ -113,8 +118,8 @@ void UIObject::layout_splitHorizontal()
     for(int& childID : children){
         UIObject& child = UIManager::objects[childID];
         if(!child.visible)continue;
-        Vec2& position = child.screenPositionPixels;
-        Vec2& size = child.screenSizePixels;
+        Vec2f& position = child.screenPositionPixels;
+        Vec2f& size = child.screenSizePixels;
 
         position.y=innerRegionY;
         position.x=horizontalOffset;
@@ -130,6 +135,8 @@ void UIObject::layout_splitHorizontal()
 void UIObject::callDraw()
 {
     if(!visible) return;
+
+    if(onResizeCallback) onResizeCallback();
 
     if(textChangeRequested) updateText();
 
@@ -175,15 +182,15 @@ void UIManager::styleUI()
 }
 void UIManager::checkHover(UIObject& obj){
     if(!obj.visible) return;
-    Vec2& mousePos = Engine::mousePosition;
-    bool hovered = Vec2::pointWithinRect(mousePos,obj.screenPositionPixels,obj.screenPositionPixels+obj.screenSizePixels);
+    Vec2f& mousePos = Engine::mousePosition;
+    bool hovered = Vec2f::pointWithinRect(mousePos,obj.screenPositionPixels,obj.screenPositionPixels+obj.screenSizePixels);
     if(hovered) hoveredObject = obj.ID;
     for(int& objID : obj.children){
         UIObject& child = getObj(objID);
         checkHover(child);
     }
 }
-void UIManager::hover(Vec2 mousePos)
+void UIManager::hover(Vec2f mousePos)
 {
     int previousHoveredObject=hoveredObject;
     if(hoveredObject!=-1){
@@ -218,6 +225,9 @@ void UIManager::mouseUp(){
     }
     heldObject=-1;
 }
+void UIManager::reserveObjects(int count){
+    objects.reserve(objects.size()+count);
+}
 
 UIObject UI::mainUI = UIObject();
 int UI::moduleMenu=0;
@@ -227,6 +237,10 @@ int UI::addModuleButton=0;
 int UI::moduleDescription::name=0;
 int UI::moduleDescription::desc=0;
 int UI::moduleDescription::creator=0;
+int UI::contextMenus::cable=0;
+int UI::contextMenus::modules=0;
+OBJ_Module* UI::currentModuleContext=nullptr;
+
 void UI::loadModuleDescription(int moduleID){
     ModuleData& module = ModuleManager::modules[moduleID];
     UIObject& nameDisplay = UIManager::getObj(UI::moduleDescription::name);
@@ -238,17 +252,29 @@ void UI::loadModuleDescription(int moduleID){
     descDisplay.setText(module.description);
 }
 
-void UI::initUI(){
-    //dont want to draw the base ui thing
-    mainUI.drawSelf=false;
-
-    //idk why it takes so many reserves but like prevent the resizing idfk
-    UIManager::objects.reserve(15);
-
+void UI::createOpenModuleMenuButton()
+{    
+    UIObject& openModuleMenuButton = UIManager::createChild(UI::mainUI,UIObject());
+    addModuleButton=openModuleMenuButton.ID;
+    openModuleMenuButton.relativeSize={80.0f,40.0f};
+    UIManager::makeInteractable(openModuleMenuButton);
+    openModuleMenuButton.onClick=[]{
+        UIObject& addModuleMenu = UIManager::getObj(UI::moduleMenu);
+        addModuleMenu.visible = !addModuleMenu.visible;
+    };
+    openModuleMenuButton.setText("add");
+}
+void UI::createModuleMenuLayout()
+{
     //create ui stuff, will eventually make functions for this
     UIObject& moduleMenuUI = UIManager::createChild(UI::mainUI,UIObject());
     UIObject& moduleListUI = UIManager::createChild(moduleMenuUI,UIObject());
     UIObject& moduleDescriptionUI = UIManager::createChild(moduleMenuUI,UIObject());
+    
+    UIObject& moduleDescName = UIManager::createChild(moduleDescriptionUI,UIObject());
+    UIObject& moduleDescCreator = UIManager::createChild(moduleDescriptionUI,UIObject());
+    UIObject& moduleDescDesc = UIManager::createChild(moduleDescriptionUI,UIObject());
+
     moduleMenuUI.visible = false;
 
     moduleMenu = moduleMenuUI.ID;
@@ -261,10 +287,6 @@ void UI::initUI(){
 
     //generate the description area
     constexpr float unit = 20.0f;
-
-    UIObject& moduleDescName = UIManager::createChild(moduleDescriptionUI,UIObject());
-    UIObject& moduleDescCreator = UIManager::createChild(moduleDescriptionUI,UIObject());
-    UIObject& moduleDescDesc = UIManager::createChild(moduleDescriptionUI,UIObject());
     
     moduleDescName.drawBackground = false;
     moduleDescCreator.drawBackground = false;
@@ -276,26 +298,73 @@ void UI::initUI(){
     moduleDescDesc.relativeSize.y=unit*2.0f;
     moduleDescCreator.relativeSize.y=unit*1.5f;
 
-    moduleDescDesc.setText("module description goes here.");
-    moduleDescCreator.setText("module creator");
-    moduleDescName.setText("module name");
     moduleDescription::name = moduleDescName.ID;
     moduleDescription::desc = moduleDescDesc.ID;
     moduleDescription::creator = moduleDescCreator.ID;
-    
+}
 
-    //create the button for opening and closing the add module menu
-    UIObject& openModuleMenuButton = UIManager::createChild(UI::mainUI,UIObject());
-    addModuleButton=openModuleMenuButton.ID;
-    openModuleMenuButton.relativeSize={80.0f,40.0f};
-    UIManager::makeInteractable(openModuleMenuButton);
-    openModuleMenuButton.onClick=[]{
-        UIObject& addModuleMenu = UIManager::getObj(UI::moduleMenu);
-        addModuleMenu.visible = !addModuleMenu.visible;
+void UI::initModuleMenu()
+{
+    UIManager::reserveObjects(7);
+    createModuleMenuLayout();       //6 objects
+    createOpenModuleMenuButton();   //1 object
+}
+UIObject &UI::createContextMenuBase(int &IDstorageLocation,std::string menuName)
+{
+    //needs to reserve 2, probably reserve some ahead of time anyway
+    UIManager::reserveObjects(2);
+
+    UIObject& contextMenuObject = UIManager::createChild(UI::mainUI,UIObject());
+    IDstorageLocation=contextMenuObject.ID;
+    contextMenuObject.layout=LIST_VERTICAL;
+    contextMenuObject.resizeToFitContent=true;
+    contextMenuObject.relativeSize.x=UI::contextMenuWidth;
+    
+    UIObject& contextMenuLabel = UIManager::createChild(contextMenuObject,UIObject());
+    contextMenuLabel.relativeSize.y=UI::contextMenuButtonHeight;
+    contextMenuLabel.setText(menuName+":");
+    contextMenuLabel.drawBackground = false;
+
+    return contextMenuObject;
+}
+void UI::initContextMenus(){
+    UIManager::reserveObjects(15);
+
+    UIObject& moduleContextMenu = UI::createContextMenuBase(contextMenus::modules,"Module");
+    UIObject& moduleDeleteButton = UIManager::createChild(moduleContextMenu,UIObject());
+    moduleDeleteButton.relativeSize.y=UI::contextMenuButtonHeight;
+    moduleDeleteButton.setText("Delete");
+    UIManager::makeInteractable(moduleDeleteButton);
+    moduleDeleteButton.onClick=[]{
+        if(!UI::currentModuleContext) return;
+        OBJ_Module& module = *UI::currentModuleContext;
+        module.deleteObj();
+        UI::closeContextMenu(UI::contextMenus::modules);
+        UI::currentModuleContext=nullptr;
     };
 
-    openModuleMenuButton.setText("add");
+    moduleContextMenu.visible = false;
+}
+void UI::openContextMenu(int menuObjectID){
+    UIObject& contextMenu = UIManager::getObj(menuObjectID);
+    contextMenu.visible = true;
+    contextMenu.relativePosition = Engine::mousePosition;
+}
+void UI::closeContextMenu(int menuObjectID){
+    UIObject& contextMenu = UIManager::getObj(menuObjectID);
+    contextMenu.visible = false;
+}
 
+void UI::openModuleContext(OBJ_Module *moduleObject)
+{
+    UI::openContextMenu(UI::contextMenus::modules);
+    UI::currentModuleContext=moduleObject;
+}
+
+void UI::initUI(){
+    mainUI.drawSelf=false;
+    initModuleMenu();
+    initContextMenus();
 }
 void UI::onResize(int width,int height){
     if(mainUI.children.size()<=0) return;
@@ -319,7 +388,8 @@ void UI::onResize(int width,int height){
 void UI::createModuleList(){
     constexpr float listButtonSize = 40.0f;
 
-    UIManager::objects.reserve(ModuleManager::modules.size());      //prevent the objects from resizing and losing reference
+    UIManager::reserveObjects(ModuleManager::modules.size());
+
     UIObject& moduleListUI = UIManager::getObj(moduleList);
     //probably need to rewrite this later
     int i=0;

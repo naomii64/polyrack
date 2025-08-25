@@ -22,7 +22,7 @@ class Engine{
         /*
             Returns the position in 3D space where the given point on the screen intersects the given z value
         */
-        static Vec3 screenPosToZPlane(Vec2 screenPos,float zValue);
+        static Vec3f screenPosToZPlane(Vec2f screenPos,float zValue);
 
         //physics
         //runs every frame and tries to tick physics 60 times a second
@@ -33,6 +33,6 @@ class Engine{
         static double previousSeconds;
         //Engine deltatime
         static double deltaTime;
-        static inline const Vec3 GRAVITY={0.0f,-98.0f,0.0f};
-        static Vec2 mousePosition;
+        static inline const Vec3f GRAVITY={0.0f,-98.0f,0.0f};
+        static Vec2f mousePosition;
 };

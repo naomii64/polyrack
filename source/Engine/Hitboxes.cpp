@@ -1,6 +1,7 @@
 #include "Hitboxes.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include "Renderer.h"
+#include "Engine.h"
 
 #if draw_hitboxes
 #include "EngineAssets.h"
@@ -8,6 +9,7 @@
 
 std::vector<Hitbox> HitboxManager::hitboxes; // DEFINITION
 Hitbox* HitboxManager::selectedHitbox=nullptr;
+int HitboxManager::deletedHitboxes=0;
 
 Hitbox &HitboxManager::createHitbox()
 {
@@ -16,32 +18,42 @@ Hitbox &HitboxManager::createHitbox()
 
 int HitboxManager::createHitboxID()
 {
-    hitboxes.emplace_back();
-    return int(hitboxes.size())-1;
+    int returnID;
+    bool inactiveHitboxExists = deletedHitboxes>0;
+    if(inactiveHitboxExists){
+        returnID=0;
+        for(Hitbox& hb : hitboxes){
+            if(!hb.active){
+                hb.active=true;
+                deletedHitboxes--;
+                break;
+            }
+            returnID++;
+        }
+    }else{
+        returnID = int(hitboxes.size());
+        hitboxes.emplace_back();
+    }
+
+    std::cout << "new hitbox #"<<returnID<<" | total count: "<<hitboxes.size()<<"\n";
+    return returnID;
 }
 
-void HitboxManager::click(Renderer &renderer, juce::MouseEvent event)
-{
-    Vec2 clickPos={float(event.x),float(event.y)};
-    Ray ray=renderer.rayFrom(clickPos);
-    /*
-    std::cout << "screen click pos: " << clickPos.toString() << std::endl;
-    std::cout << "ray start: " << ray.origin.toString() << std::endl;
-    std::cout << "ray direction: " << ray.direction.toString() << std::endl;
-    */
+Hitbox* HitboxManager::getHitboxUnderPixel(Vec2f pixel){
+    Ray ray=Engine::renderer->rayFrom(pixel);
 
     float dist;
-
     Hitbox* finalHitBox=nullptr;
 
     for(Hitbox& hb : hitboxes){
+        if(!hb.active) continue;
+
         AABB aabb;
         aabb.min=hb.position-hb.bounds;
         aabb.max=hb.position+hb.bounds;
-        
+
         RayHit hit=rayIntersectsAABB(ray,aabb);
         if(hit.hit){
-            //if this is the first detected box, set the distance
             if((finalHitBox==nullptr)||(hit.distance<dist)){
                 dist=hit.distance;
                 finalHitBox=&hb;
@@ -49,11 +61,22 @@ void HitboxManager::click(Renderer &renderer, juce::MouseEvent event)
         }    
     }
 
-    if(finalHitBox!=nullptr){
-        //if a hitbox was clicked then 
-        selectedHitbox=finalHitBox;
-        if(selectedHitbox->mouseDown) selectedHitbox->mouseDown();
-    }
+    return finalHitBox;
+}
+void HitboxManager::rightMouseDown(){
+    Hitbox* clickedHitbox = getHitboxUnderPixel(Engine::mousePosition);
+    if(!clickedHitbox) return;
+
+    //move the clicking functions to function like regular clicks later and not like mousedowns
+    if(clickedHitbox->rightClick) clickedHitbox->rightClick();
+}
+void HitboxManager::leftMouseDown()
+{
+    Hitbox* clickedHitbox = getHitboxUnderPixel(Engine::mousePosition);
+    if(!clickedHitbox) return;
+
+    selectedHitbox=clickedHitbox;
+    if(selectedHitbox->mouseDown) selectedHitbox->mouseDown();
 }
 void HitboxManager::mouseUp(juce::MouseEvent event)
 {
@@ -61,16 +84,23 @@ void HitboxManager::mouseUp(juce::MouseEvent event)
     if(selectedHitbox->mouseUp) selectedHitbox->mouseUp();
     selectedHitbox=nullptr;
 }
-void HitboxManager::dragHitbox(Vec2 delta,Vec2 mousePos)
+void HitboxManager::dragHitbox(Vec2f delta,Vec2f mousePos)
 {
     if(selectedHitbox==nullptr) return;
     if(selectedHitbox->onDrag) selectedHitbox->onDrag(delta,mousePos);
+}
+void HitboxManager::deleteHitbox(int hitboxID){
+    Hitbox& hitbox = hitboxes[hitboxID];
+    if(!hitbox.active) return;
+    hitbox.active=false;
+    deletedHitboxes++;
 }
 
 #if draw_hitboxes
 void HitboxManager::drawAllHitBoxes(Renderer& renderer)
 {
     for(Hitbox& hitbox : hitboxes){
+        if(!hitbox.active) continue;
         renderer.drawModelAt(
             EngineAssets::mWireCube,
             hitbox.position,

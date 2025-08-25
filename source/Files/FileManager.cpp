@@ -118,9 +118,9 @@ void FileManager::loadModules(Renderer& renderer,TextureManager& textureAtlas) {
                 if (inputStream != nullptr)
                 {
                     juce::String fileContents = inputStream->readEntireStreamAsString();
-                    Model& model = moduleData.models.emplace_back();
-                    model.createGeometry(renderer.openGLContext,parseOBJString(fileContents.toStdString()));
-                    model.textureID=modelTextureID;
+                    Model& currentModel = moduleData.models.emplace_back();
+                    currentModel.createGeometry(renderer.openGLContext,parseOBJString(fileContents.toStdString()));
+                    currentModel.textureID=modelTextureID;
                 }
             }
         }
@@ -128,7 +128,7 @@ void FileManager::loadModules(Renderer& renderer,TextureManager& textureAtlas) {
         moduleData.animations.reserve(moduleAnimations->size());    //also reserve this
         for(const juce::var& animation : *moduleAnimations){
             Animation& animationData = moduleData.animations.emplace_back();
-            animationData.hitboxSize=readVec3FromObj(animation["hitboxSize"],Vec3(0.5f));
+            animationData.hitboxSize=readVec3FromObj(animation["hitboxSize"],Vec3f(0.5f));
             juce::Array<juce::var>* animationModels = animation["models"].getArray();
             //for each model in the animation
             for(const juce::var& model : *animationModels){

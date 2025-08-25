@@ -25,7 +25,7 @@ class TextureManager{
         The uv coordinates of each texture as a vector of Vec4s.
         0 will always be (0,0,1,1) or the whole texture.
         */
-        std::vector<Vec4> textureCoords;
+        std::vector<Vec4f> textureCoords;
 
     private:
         std::vector<juce::Image> textures;

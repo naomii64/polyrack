@@ -1,6 +1,7 @@
 #pragma once
 namespace Math{
-    inline float lerp(float a,float b,float i){
+    template<typename T>
+    inline T lerp(T a,T b,float i){
         return ((b-a)*i)+a;
     }
 }

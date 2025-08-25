@@ -6,33 +6,67 @@
 #include "juce_core/juce_core.h"
 #include "CustomMath.h"
 
-//disable compiler specific warning
 #pragma warning(disable : 4201)
+#pragma warning(disable : 4348)
 
-#define DEBUG_MODE true
-
-#if DEBUG_MODE
-#include <vector>
-#endif
-
-//list everything here so they can refrence eachother
+template<typename T = float>
 struct Vec2;
+template<typename T = float>
 struct Vec3;
+template<typename T = float>
+struct Vec4;
+template<typename T = float>
+struct Mat3;
+template<typename T = float>
 struct Mat4;
 struct Transform;
 
-struct Vec3 {
-    union {
-        struct { float x, y, z; };
-        float data[3];
-    };
-
-    // Constructors
-    Vec3() : x(0), y(0), z(0) {}
-    Vec3(float x, float y, float z) : x(x), y(y), z(z) {}
-    explicit Vec3(float scalar) : x(scalar), y(scalar), z(scalar) {}
+template<typename T = float>
+struct Vec2 {
+    T x, y;
     
-    float& operator[](int index) {
+    Vec2() : x(0), y(0) {}
+    Vec2(T x, T y) : x(x), y(y) {}
+    explicit Vec2(T scalar) : x(scalar), y(scalar) {}
+    
+    Vec2 operator+(const Vec2& other) const { return Vec2(x + other.x, y + other.y); }
+    Vec2 operator-(const Vec2& other) const { return Vec2(x - other.x, y - other.y); }
+    Vec2 operator*(const Vec2& other) const { return Vec2(x * other.x, y * other.y); }
+    Vec2 operator/(const Vec2& other) const { return Vec2(x / other.x, y / other.y); }
+    Vec2 operator+(T scalar) const { return Vec2(x + scalar, y + scalar); }
+    Vec2 operator-(T scalar) const { return Vec2(x - scalar, y - scalar); }
+    Vec2 operator*(T scalar) const { return Vec2(x * scalar, y * scalar); }
+    Vec2 operator/(T scalar) const { return Vec2(x / scalar, y / scalar); }
+    
+    Vec2& operator+=(const Vec2& other) noexcept { x += other.x; y += other.y; return *this; }
+    Vec2& operator-=(const Vec2& other) noexcept { x -= other.x; y -= other.y; return *this; }
+    Vec2& operator*=(const Vec2& other) noexcept { x *= other.x; y *= other.y; return *this; }
+    Vec2& operator/=(const Vec2& other) noexcept { x /= other.x; y /= other.y; return *this; }
+    Vec2& operator+=(T scalar) { x += scalar; y += scalar; return *this; }
+    Vec2& operator-=(T scalar) { x -= scalar; y -= scalar; return *this; }
+    Vec2& operator*=(T scalar) { x *= scalar; y *= scalar; return *this; }
+    Vec2& operator/=(T scalar) { x /= scalar; y /= scalar; return *this; }
+
+    Vec2 operator-() const { return Vec2( -x, -y ); }
+
+    std::string toString() const {
+        std::string xString=std::to_string(x);
+        std::string yString=std::to_string(y);
+
+        return "("+xString+","+yString+")";
+    }
+
+    static bool pointWithinRect(Vec2 point,Vec2 min, Vec2 max){ return (point.x>=min.x)&&(point.y>=min.y)&&(point.x<=max.x)&&(point.y<=max.y); }
+};
+template<typename T = float>
+struct Vec3 {
+    T x,y,z;
+
+    Vec3() : x(0), y(0), z(0) {}
+    Vec3(T x, T y, T z) : x(x), y(y), z(z) {}
+    explicit Vec3(T scalar) : x(scalar), y(scalar), z(scalar) {}
+    
+    T& operator[](int index) {
         switch (index) {
         case 0: return x;
         case 1: return y;
@@ -40,7 +74,7 @@ struct Vec3 {
         default: throw std::out_of_range("Vec3 index out of range");
         }
     }
-    const float& operator[](int index) const {
+    const T& operator[](int index) const {
         switch (index) {
         case 0: return x;
         case 1: return y;
@@ -48,59 +82,28 @@ struct Vec3 {
         default: throw std::out_of_range("Vec3 index out of range");
         }
     }
-    //vector operations
-    Vec3 operator+(const Vec3& other) const {
-        return Vec3(x + other.x, y + other.y, z + other.z);
-    }
-    Vec3 operator-(const Vec3& other) const {
-        return Vec3(x - other.x, y - other.y, z - other.z);
-    }
-    Vec3 operator*(const Vec3& other) const {
-        return Vec3(x * other.x, y * other.y, z * other.z);
-    }
-    Vec3 operator/(const Vec3& other) const {
-        return Vec3(x / other.x, y / other.y, z / other.z);
-    }
-    //incrementers or whatever theyre called
-    Vec3& operator+=(const Vec3& other) noexcept {
-        x += other.x;
-        y += other.y;
-        z += other.z;
-        return *this;
-    }
-    Vec3& operator-=(const Vec3& other) noexcept {
-        x -= other.x;
-        y -= other.y;
-        z -= other.z;
-        return *this;
-    }
-    //scalar operations
-    Vec3 operator*(float scalar) const {
-        return Vec3(x * scalar, y * scalar, z * scalar);
-    }
-    Vec3 operator/(float scalar) const {
-        return Vec3(x / scalar, y / scalar, z / scalar);
-    }
-    Vec3& operator*=(float scalar) {
-        x *= scalar;
-        y *= scalar;
-        z *= scalar;
-        return *this;
-    }
-    Vec3& operator/=(float scalar) {
-        x /= scalar;
-        y /= scalar;
-        z /= scalar;
-        return *this;
-    }
-    //misc
-    Vec3 operator-() const {
-        return Vec3{ -x, -y, -z };
-    }
-    //linar algebra
-    float dot(const Vec3& other) const {
-        return x * other.x + y * other.y + z * other.z;
-    }
+
+    Vec3 operator+(const Vec3& other) const { return Vec3(x + other.x, y + other.y, z + other.z); }
+    Vec3 operator-(const Vec3& other) const { return Vec3(x - other.x, y - other.y, z - other.z); }
+    Vec3 operator*(const Vec3& other) const { return Vec3(x * other.x, y * other.y, z * other.z); }
+    Vec3 operator/(const Vec3& other) const { return Vec3(x / other.x, y / other.y, z / other.z); }
+    Vec3 operator+(T scalar) const { return Vec3(x + scalar, y + scalar, z + scalar); }
+    Vec3 operator-(T scalar) const { return Vec3(x - scalar, y - scalar, z - scalar); }
+    Vec3 operator*(T scalar) const { return Vec3(x * scalar, y * scalar, z * scalar); }
+    Vec3 operator/(T scalar) const { return Vec3(x / scalar, y / scalar, z / scalar); }
+    
+    Vec3& operator+=(const Vec3& other) { x += other.x; y += other.y; z += other.z; return *this; }
+    Vec3& operator-=(const Vec3& other) { x -= other.x; y -= other.y; z -= other.z; return *this; }
+    Vec3& operator*=(const Vec3& other) { x *= other.x; y *= other.y; z *= other.z; return *this; }
+    Vec3& operator/=(const Vec3& other) { x /= other.x; y /= other.y; z /= other.z; return *this; }
+    Vec3& operator+=(T scalar) { x += scalar; y += scalar; z += scalar; return *this; }
+    Vec3& operator-=(T scalar) { x -= scalar; y -= scalar; z -= scalar; return *this; }
+    Vec3& operator*=(T scalar) { x *= scalar; y *= scalar; z *= scalar; return *this; }
+    Vec3& operator/=(T scalar) { x /= scalar; y /= scalar; z /= scalar; return *this; }
+
+    Vec3 operator-() const { return Vec3( -x, -y, -z ); }
+    
+    T dot(const Vec3& other) const { return x * other.x + y * other.y + z * other.z; }
     Vec3 cross(const Vec3& other) const {
         return Vec3(
             y * other.z - z * other.y,
@@ -115,21 +118,31 @@ struct Vec3 {
             cos(y) * cos(x)
         );
     }
-    // Magnitude and normalization
-    float length() const {
-        return std::sqrt(x * x + y * y + z * z);
-    }
+    T length() const { return std::sqrt(x * x + y * y + z * z); }
     Vec3 normalized() const {
         float len = length();
         if (len == 0.0f) return Vec3(0, 0, 0);
         return *this / len;
     }
+    Vec3 lookAt(const Vec3& target) const {
+        Vec3 dir = target - *this;
 
+        Vec3 fwd = dir.normalized();
+
+        T pitch = std::atan2(-fwd.y, std::sqrt(fwd.x * fwd.x + fwd.z * fwd.z));
+        T yaw   = std::atan2(fwd.x, fwd.z);
+        T roll = 0;
+
+        return { pitch, yaw, roll };
+    }
+
+    static Vec3 round(const Vec3& vec){ return {std::round(vec.x),std::round(vec.y),std::round(vec.z)}; }
     static Vec3 random() {
         return Vec3(
-            float(rand()) / RAND_MAX,
-            float(rand()) / RAND_MAX,
-            float(rand()) / RAND_MAX);
+            T(rand()) / RAND_MAX,
+            T(rand()) / RAND_MAX,
+            T(rand()) / RAND_MAX
+        );
     }
     static Vec3 lerp(Vec3 A, Vec3 B, float i){
         return Vec3(
@@ -146,117 +159,44 @@ struct Vec3 {
 
         return "("+xString+","+yString+","+zString+")";
     }
-
-    Vec3 lookAt(const Vec3& target) const {
-        Vec3 dir = target - *this; // direction from current point to target
-
-        // Normalize the direction
-        Vec3 fwd = dir.normalized(); // Assuming you have a .normalized() function
-
-        // Calculate pitch and yaw
-        float pitch = std::atan2(-fwd.y, std::sqrt(fwd.x * fwd.x + fwd.z * fwd.z)); // rotation around X
-        float yaw   = std::atan2(fwd.x, fwd.z); // rotation around Y
-
-        return { pitch, yaw, 0.0f }; // roll = 0
-    }
-    static Vec3 round(const Vec3& vec){
-        return {std::round(vec.x),std::round(vec.y),std::round(vec.z)};
-    }
 };
-struct Vec2 {
-    //constructors
-    union {
-        struct { float x, y; };
-        float data[2];
-    };
-    
-    Vec2() : x(0), y(0) {}
-    Vec2(float x, float y) : x(x), y(y) {}
-    explicit Vec2(float scalar) : x(scalar), y(scalar) {}
-    
-
-    //operations
-    //vector operations
-    Vec2 operator+(const Vec2& other) const {
-        return Vec2(x + other.x, y + other.y);
-    }
-    Vec2 operator-(const Vec2& other) const {
-        return Vec2(x - other.x, y - other.y);
-    }
-    Vec2 operator*(const Vec2& other) const {
-        return Vec2(x * other.x, y * other.y);
-    }
-    Vec2 operator/(const Vec2& other) const {
-        return Vec2(x / other.x, y / other.y);
-    }
-
-    //scalar operations
-    Vec2 operator*(float scalar) const {
-        return Vec2(x * scalar, y * scalar);
-    }
-    Vec2 operator/(float scalar) const {
-        return Vec2(x / scalar, y / scalar);
-    }
-    Vec2& operator*=(float scalar) {
-        x *= scalar;
-        y *= scalar;
-        return *this;
-    }
-    Vec2& operator/=(float scalar) {
-        x /= scalar;
-        y /= scalar;
-        return *this;
-    }
-    Vec2& operator+=(const Vec2& other) noexcept {
-        x += other.x;
-        y += other.y;
-        return *this;
-    }
-    std::string toString() const {
-        std::string xString=std::to_string(x);
-        std::string yString=std::to_string(y);
-
-        return "("+xString+","+yString+")";
-    }
-
-    static bool pointWithinRect(Vec2 point,Vec2 min, Vec2 max){
-        return (point.x>=min.x)&&(point.y>=min.y)&&(point.x<=max.x)&&(point.y<=max.y);
-    }
-};
+template<typename T = float>
 struct Vec4 {
-    //constructors
-    union {
-        struct { float x, y, z, w; };
-        float data[4];
-    };
+    T x, y, z, w;
     
     Vec4() : x(0), y(0), z(0), w(0) {}
-    Vec4(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
-    explicit Vec4(float scalar) : x(scalar), y(scalar), z(scalar), w(scalar) {}
+    Vec4(T x, T y, T z, T w) : x(x), y(y), z(z), w(w) {}
+    explicit Vec4(T scalar) : x(scalar), y(scalar), z(scalar), w(scalar) {}
     
-    //vector operations
-    Vec4 operator+(const Vec4& other) const {
-        return Vec4(x + other.x, y + other.y, z + other.z, w + other.w);
-    }
-    Vec4 operator-(const Vec4& other) const {
-        return Vec4(x - other.x, y - other.y, z - other.z, w - other.w);
-    }
-    Vec4 operator*(const Vec4& other) const {
-        return Vec4(x * other.x, y * other.y, z * other.z, w * other.w);
-    }
-    Vec4 operator/(const Vec4& other) const {
-        return Vec4(x / other.x, y / other.y, z / other.z, w / other.w);
-    }
+    Vec4 operator+(const Vec4& other) const { return Vec4(x + other.x, y + other.y, z + other.z, w + other.w); }
+    Vec4 operator-(const Vec4& other) const { return Vec4(x - other.x, y - other.y, z - other.z, w - other.w); }
+    Vec4 operator*(const Vec4& other) const { return Vec4(x * other.x, y * other.y, z * other.z, w * other.w); }
+    Vec4 operator/(const Vec4& other) const { return Vec4(x / other.x, y / other.y, z / other.z, w / other.w); }
+    Vec4 operator+(T scalar) const { return Vec4(x + scalar, y + scalar, z + scalar, w + scalar); }
+    Vec4 operator-(T scalar) const { return Vec4(x - scalar, y - scalar, z - scalar, w - scalar); }
+    Vec4 operator*(T scalar) const { return Vec4(x * scalar, y * scalar, z * scalar, w * scalar); }
+    Vec4 operator/(T scalar) const { return Vec4(x / scalar, y / scalar, z / scalar, w / scalar); }
+    
+    Vec4& operator+=(const Vec4& other) { x += other.x; y += other.y; z += other.z; w += other.w; return *this; }
+    Vec4& operator-=(const Vec4& other) { x -= other.x; y -= other.y; z -= other.z; w -= other.w; return *this; }
+    Vec4& operator*=(const Vec4& other) { x *= other.x; y *= other.y; z *= other.z; w *= other.w; return *this; }
+    Vec4& operator/=(const Vec4& other) { x /= other.x; y /= other.y; z /= other.z; w /= other.w; return *this; }
+    Vec4& operator+=(T scalar) { x += scalar; y += scalar; z += scalar; w += scalar; return *this; }
+    Vec4& operator-=(T scalar) { x -= scalar; y -= scalar; z -= scalar; w -= scalar; return *this; }
+    Vec4& operator*=(T scalar) { x *= scalar; y *= scalar; z *= scalar; w *= scalar; return *this; }
+    Vec4& operator/=(T scalar) { x /= scalar; y /= scalar; z /= scalar; w /= scalar; return *this; }
 
-    Vec2 xy() const { return Vec2(x, y); }
-    Vec2 zw() const { return Vec2(z, w); }
+    Vec4 operator-() const { return Vec4( -x, -y, -z, -w ); }
 
+    Vec2<T> xy() const { return Vec2(x, y); }
+    Vec2<T> zw() const { return Vec2(z, w); }
+    
     static Vec4 random() {
         return Vec4(
-            float(rand()) / RAND_MAX,
-            float(rand()) / RAND_MAX,
-            float(rand()) / RAND_MAX,
-            float(rand()) / RAND_MAX
+            T(rand()) / RAND_MAX,
+            T(rand()) / RAND_MAX,
+            T(rand()) / RAND_MAX,
+            T(rand()) / RAND_MAX
         );
     }
 
@@ -268,26 +208,14 @@ struct Vec4 {
         
         return "("+xString+","+yString+","+zString+","+wString+")";
     }
-
-
-
-
-    //for debugging
-    #if DEBUG_MODE
-    static void debugVector(std::vector<Vec4>& vector){
-        std::cout << "vector of "<< vector.size() <<" Vec4s:" << std::endl;
-        for(Vec4& v: vector){
-            std::cout << "\t" << v.toString() << std::endl;
-        }
-    }
-    #endif
 };
+template<typename T = float>
 struct Mat4 {
-    float data[16]; // column-major order
+    T data[16]; // column-major order
 
     Mat4() {
         for (int i = 0; i < 16; ++i)
-            data[i] = (i % 5 == 0) ? 1.0f : 0.0f; // identity
+            data[i] = (i % 5 == 0) ? T(1) : T(0); // identity
     }
     Mat4(
         float m00, float m01, float m02, float m03,
@@ -312,7 +240,7 @@ struct Mat4 {
     const float& operator()(int row, int col) const { return data[col * 4 + row]; }
 
     // Multiply two matrices
-    Mat4 operator*(const Mat4& other) const {
+    Mat4 operator*(const Mat4<T>& other) const {
         Mat4 result;
         for (int row = 0; row < 4; ++row) {
             for (int col = 0; col < 4; ++col) {
@@ -334,7 +262,7 @@ struct Mat4 {
         result(2, 3) = z;
         return result;
     }
-    static Mat4 translation(const Vec3& v) {
+    static Mat4 translation(const Vec3<T>& v) {
         return translation(v.x, v.y, v.z);
     }
     // Scaling matrix
@@ -345,7 +273,7 @@ struct Mat4 {
         result(2, 2) = z;
         return result;
     }
-    static Mat4 scaling(const Vec3& v) {
+    static Mat4 scaling(const Vec3<T>& v) {
         return scaling(v.x, v.y, v.z);
     }
 
@@ -386,16 +314,20 @@ struct Mat4 {
     }
 
     // Combined rotation from Vec3 (pitch, yaw, roll)
-    static Mat4 rotation(const Vec3& v) {
+    static Mat4 rotation(const Vec3<T>& v) {
         return rotationZ(v.z) * rotationY(v.y) * rotationX(v.x);
     }
-    static Mat4 rotation(float x, float y, float z) {
-        return rotation(Vec3(x, y, z));
+    static Mat4 rotation(T x, T y, T z) {
+        return rotation(Vec3<T>(x, y, z));
     }
-    static Mat4 inverseRotation(const Vec3& v){
+    static Mat4 inverseRotation(const Vec3<T>& v){
         //will replace with a dedicated and faster one later
         return rotation(v).fastInverseRT();
     }
+    static Mat4 transform(const Vec3<T>& translation,const Vec3<T>& rotation,const Vec3<T>& scale){
+        return Mat4::translation(translation)*Mat4::translation(rotation)*Mat4::translation(scale);
+    }
+
     //perspective
     static Mat4 makePerspectiveMatrix(float fovYDegrees, float aspect, float nearZ, float farZ)
     {
@@ -439,13 +371,11 @@ struct Mat4 {
         Mat4 result;
         for (int i = 0; i < 4; ++i)
             for (int j = 0; j < 4; ++j)
-                result(i,j) = (float(j),float(i));
+                result(i,j) = (T(j),T(i));
         return result;
     }
-    Vec3 getTranslation() const {
-        return Vec3(data[12], data[13], data[14]);
-    }
-    Vec4 operator*(const Vec4& v) const {
+    Vec3<T> getTranslation() const { return Vec3(data[12], data[13], data[14]); }
+    Vec4<T> operator*(const Vec4<T>& v) const {
         return Vec4{
             data[0] * v.x + data[4] * v.y + data[8]  * v.z + data[12] * v.w,
             data[1] * v.x + data[5] * v.y + data[9]  * v.z + data[13] * v.w,
@@ -585,8 +515,9 @@ struct Mat4 {
         return data;
     }
 };
+template<typename T = float>
 struct Mat3 {
-    float data[9]; // column-major order
+    T data[9]; // column-major order
 
     Mat3() {
         for (int i = 0; i < 9; ++i)
@@ -608,7 +539,7 @@ struct Mat3 {
 
     // Multiply two matrices
     Mat3 operator*(const Mat3& other) const {
-        Mat3 result;
+        Mat3<T> result;
         for (int row = 0; row < 3; ++row) {
             for (int col = 0; col < 3; ++col) {
                 float sum = 0.0f;
@@ -643,10 +574,17 @@ struct Mat3 {
 };
 
 struct Transform{
-    Vec3 position;
-    Vec3 rotation;
-    Vec3 scale={1.0f,1.0f,1.0f};
-    Mat4 getMatrix() const {
-        return Mat4::translation(position)*Mat4::rotation(rotation)*Mat4::scaling(scale);
+    Vec3<float> position;
+    Vec3<float> rotation;
+    Vec3<float> scale={1,1,1};
+    Mat4<float> getMatrix() const {
+        return Mat4<float>::transform(position,rotation,scale);
     }
 };
+
+using Vec3f = Vec3<float>;
+using Vec2f = Vec2<float>;
+using Vec4f = Vec4<float>;
+
+using Mat3f = Mat3<float>;
+using Mat4f = Mat4<float>;

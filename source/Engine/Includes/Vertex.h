@@ -24,7 +24,7 @@ struct Vertex {
     struct VectorProxy {
         float* ptr;
         VectorProxy(float* p) : ptr(p) {}
-        VectorProxy& operator=(const Vec3& value) {
+        VectorProxy& operator=(const Vec3f& value) {
             ptr[0] = value.x;
             ptr[1] = value.y;
             ptr[2] = value.z;
@@ -36,7 +36,7 @@ struct Vertex {
             ptr[2] = value;
             return *this;
         }
-        operator Vec3() const {
+        operator Vec3f() const {
             return { ptr[0], ptr[1], ptr[2] };
         }
     };

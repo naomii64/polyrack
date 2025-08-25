@@ -66,16 +66,15 @@ struct AnimFunctionCollection{
         parser.compile(sx, exp_sx);
         parser.compile(sy, exp_sy);
         parser.compile(sz, exp_sz);
-        
-        //std::cout<<"expressions compiled!\n";
     }
 };
+
 struct Animation{
     std::vector<Model*> models;
     std::vector<std::unique_ptr<AnimFunctionCollection>> animFunctions;
-    Vec3 hitboxSize={1.0f,1.0f,1.0f};
+    Vec3f hitboxSize={1.0f,1.0f,1.0f};
     
-    void draw(const Vec2& values,Renderer& renderer,Mat4 transformMatrix){
+    void draw(const Vec2f& values,Renderer& renderer,Mat4f transformMatrix){
         for(int i=0;i<models.size();i++){
             std::unique_ptr<AnimFunctionCollection>& funcs = animFunctions[i];
             Model* model = models[i];
@@ -84,16 +83,16 @@ struct Animation{
             
             Transform animationModelTransform;
 
-            Vec3& rotation = animationModelTransform.rotation;
+            Vec3f& rotation = animationModelTransform.rotation;
             rotation.x=funcs->exp_rx.value();
             rotation.y=funcs->exp_ry.value();
             rotation.z=funcs->exp_rz.value();
             rotation*=-juce::MathConstants<float>::pi/180.0f;
             
+            Mat4f finalMatrix = transformMatrix*animationModelTransform.getMatrix();
+            Mat4f modelNormalMatrix = Mat4f();
 
-            Mat4 finalMatrix = transformMatrix*animationModelTransform.getMatrix();
-
-            renderer.drawModelWithMatrix(*model,finalMatrix,Mat4(),model->textureID);
+            renderer.drawModelWithMatrix(*model,finalMatrix,modelNormalMatrix,model->textureID);
         }
     }
 };

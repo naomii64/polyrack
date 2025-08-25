@@ -70,42 +70,42 @@ namespace EngineAssets{
             #define POS3 {1.0f,0.0f,0.0f}
             #define POS4 {0.0f,0.0f,0.0f}
 
-            Vec2 UVA(0.0f);
-            Vec2 UVB(1.0f);
+            Vec2f UVA(0.0f);
+            Vec2f UVB(1.0f);
             
-            Vec2 uvOffset(0.0f);
+            Vec2f uvOffset(0.0f);
 
             //UVS ARE ALSO WEIRD ABOUT WHATS UPSIDE DOWN OMG
 
             switch (i)
             {
                 case NineSlice::BOTTOM_LEFT:
-                    uvOffset=Vec2(0.0f);
+                    uvOffset=Vec2f(0.0f);
                     break;
                 case NineSlice::BOTTOM_MIDDLE:
-                    uvOffset=Vec2(1.0f,0.0f);
+                    uvOffset=Vec2f(1.0f,0.0f);
                     break;
                 case NineSlice::BOTTOM_RIGHT:
-                    uvOffset=Vec2(2.0f,0.0f);
+                    uvOffset=Vec2f(2.0f,0.0f);
                     break;
                 case NineSlice::MIDDLE_LEFT:
-                    uvOffset=Vec2(0.0f,1.0f);
+                    uvOffset=Vec2f(0.0f,1.0f);
                     break;
                 case NineSlice::MIDDLE_MIDDLE:
-                    uvOffset=Vec2(1.0f,1.0f);
+                    uvOffset=Vec2f(1.0f,1.0f);
                     break;
                 case NineSlice::MIDDLE_RIGHT:
-                    uvOffset=Vec2(2.0f,1.0f);
+                    uvOffset=Vec2f(2.0f,1.0f);
                     break;
                     
                 case NineSlice::TOP_LEFT:
-                    uvOffset=Vec2(0.0f,2.0f);
+                    uvOffset=Vec2f(0.0f,2.0f);
                     break;
                 case NineSlice::TOP_MIDDLE:
-                    uvOffset=Vec2(1.0f,2.0f);
+                    uvOffset=Vec2f(1.0f,2.0f);
                     break;
                 case NineSlice::TOP_RIGHT:
-                    uvOffset=Vec2(2.0f,2.0f);
+                    uvOffset=Vec2f(2.0f,2.0f);
                     break;                
                     
                 default:
@@ -186,39 +186,39 @@ namespace EngineAssets{
                 float nextx=std::cos(nextrRad)*cableRadius;
                 float nexty=std::sin(nextrRad)*cableRadius;
                 
-                Vec3 normal1(1.0f,1.0f,1.0f);
+                Vec3f normal1(1.0f,1.0f,1.0f);
 
                 #define COLOR {1.0f,1.0f,1.0f,1.0f}
                 //positions. pos and normal are the same since its a cylindar
                 #define POS1 {x,y,0.0f}
                 #define POS2 {nextx,nexty,0.0f}
 
-                Vec4 uv;
+                Vec4f uv;
                 float uvStart = float(uvSpreadIndex)*uvSpreadWidth;
                 uv = {uvStart,0.0f,uvStart+uvSpreadWidth,1.0f};
 
-                int group_UL = i;
+                uint8_t group_UL = i;
                 Vertex Vert_UL = {
                     POS1,
                     POS1,
                     COLOR,
                     {uv.x,uv.y}
                 };
-                int group_UR = i;
+                uint8_t group_UR = i;
                 Vertex Vert_UR = {
                     POS2,
                     POS2,
                     COLOR,
                     {uv.z,uv.y}
                 };
-                int group_DR = i+1;
+                uint8_t group_DR = i+1;
                 Vertex Vert_DR = {
                     POS2,
                     POS2,
                     COLOR,
                     {uv.z,uv.w}
                 };
-                int group_DL = i+1;
+                uint8_t group_DL = i+1;
                 Vertex Vert_DL = {
                     POS1,
                     POS1,

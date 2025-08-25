@@ -7,7 +7,7 @@ namespace TextManager{
     constexpr std::array<float, 96> generateCharWidths() {
         std::array<float, 96> widths = {};
 
-        for (int i = 0; i < 96; ++i) {
+        for (size_t i = 0; i < size_t(96); ++i) {
             widths[i] = defaultWidth;
         }
 
@@ -103,11 +103,11 @@ namespace TextManager{
                 int row = 5-(glyphIndex / glyphsPerRow);
 
 
-                const Vec2 posA={currentX-justifyOffset,0.0f};
-                const Vec2 posB={currentX+currentCharWidth-justifyOffset,fontSize};
+                const Vec2f posA={currentX-justifyOffset,0.0f};
+                const Vec2f posB={currentX+currentCharWidth-justifyOffset,fontSize};
                 
-                const Vec2 uvA={col*uvWidth,row*uvHeight};
-                const Vec2 uvB={uvA.x+(uvWidth*charWidthPercentage),uvA.y+uvHeight};
+                const Vec2f uvA={col*uvWidth,row*uvHeight};
+                const Vec2f uvB={uvA.x+(uvWidth*charWidthPercentage),uvA.y+uvHeight};
                 
                 //normal is all 1s for now
                 #define NORMAL {1.0f,1.0f,1.0f}

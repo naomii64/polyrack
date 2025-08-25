@@ -1,7 +1,10 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "Includes/Includes.h"
+#include "Includes/DataTypes.h"
+#include "Includes/Model.h"
+#include "Includes/Vertex.h"
+#include "Includes/ParseOBJ.h"
 
 namespace TextManager{
     enum Justification{

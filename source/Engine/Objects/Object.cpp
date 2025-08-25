@@ -5,6 +5,8 @@
 #include "../Hitboxes.h"
 #include "../ModuleManager.h"
 
+#pragma warning(disable : 4100)
+
 Object::Object(){}
 Object::~Object(){}
 void Object::updateMatrix(){
@@ -35,22 +37,22 @@ void Object::callDraw()
 void Object::onDraw(){}
 void Object::onTransformChange(){}
 
-void Object::setPosition(Vec3 newPosition)
+void Object::setPosition(Vec3f newPosition)
 {
     transform.position = newPosition;
     matrixRecalculationRequested=true;
 }
-void Object::setScale(Vec3 newScale)
+void Object::setScale(Vec3f newScale)
 {
     transform.scale = newScale;
     matrixRecalculationRequested=true;
 }
-void Object::setRotation(Vec3 newRotation)
+void Object::setRotation(Vec3f newRotation)
 {
     transform.rotation = newRotation;
     matrixRecalculationRequested=true;
 }
-void Object::setTransform(Vec3 newPosition, Vec3 newRotation, Vec3 newScale)
+void Object::setTransform(Vec3f newPosition, Vec3f newRotation, Vec3f newScale)
 {
     transform.position = newPosition;
     transform.rotation = newRotation;
@@ -74,7 +76,7 @@ void POBJ_Cable::applyGravityAndMomentum(float delta){
             point.previousPosition=point.position;
             continue;
         }
-        Vec3 copyPos=point.position;
+        Vec3f copyPos=point.position;
 
         point.position=point.position*2-point.previousPosition+Engine::GRAVITY*delta*delta;
 
@@ -91,7 +93,7 @@ void POBJ_Cable::applyConstraints(){
             //will probably never happen but still
             if(pointA.fixed && pointB.fixed) continue;
 
-            Vec3 diff=pointA.position-pointB.position;
+            Vec3f diff=pointA.position-pointB.position;
             //avoid div by 0
             int x=*reinterpret_cast<int*>(&diff.x);
             int y=*reinterpret_cast<int*>(&diff.y);
@@ -104,10 +106,10 @@ void POBJ_Cable::applyConstraints(){
             //calculate the distance once
             float distance = diff.length();
             //normalize using that distance
-            Vec3 dir=diff/distance;
+            Vec3f dir=diff/distance;
 
             float distanceError = distance-desiredDistance;
-            Vec3 distErr=dir*distanceError;
+            Vec3f distErr=dir*distanceError;
             
             //should be the most common case, gets checked first
             if(!pointA.fixed && !pointB.fixed){
@@ -147,13 +149,13 @@ void POBJ_Cable::rotatePoints(){
 void POBJ_Cable::calculateMatrices(){
     for(CablePoint& point : points){
         //order is handled differently for cables
-        Mat4 rotX = Mat4::rotationX(point.rotation.x);
-        Mat4 rotY = Mat4::rotationY(point.rotation.y);
-        Mat4 rotZ = Mat4::rotationZ(point.rotation.z);
-        Mat4 rotationMatrix = rotY * rotX * rotZ;
-        point.matrix=Mat4::translation(point.position)*rotationMatrix;
+        Mat4f rotX = Mat4f::rotationX(point.rotation.x);
+        Mat4f rotY = Mat4f::rotationY(point.rotation.y);
+        Mat4f rotZ = Mat4f::rotationZ(point.rotation.z);
+        Mat4f rotationMatrix = rotY * rotX * rotZ;
+        point.matrix=Mat4f::translation(point.position)*rotationMatrix;
 
-        point.inverseRotationMatrix=Mat4::inverseRotation(point.rotation);
+        point.inverseRotationMatrix=Mat4f::inverseRotation(point.rotation);
     }
 }
 void POBJ_Cable::moveHitboxes(){
@@ -175,12 +177,12 @@ void POBJ_Cable::physicsTick(float delta){
     calculateMatrices();
     moveHitboxes();
 }
-void POBJ_Cable::createCable(int pointCount,Vec3 start,Vec3 end){
+void POBJ_Cable::createCable(int pointCount,Vec3f start,Vec3f end){
     hasBeenCreated=true;
     points.resize(pointCount);
     for(int i=0;i<points.size();i++){
         float interpolationValue=float(i)/float(points.size()-1);
-        Vec3 currentPointPos = Vec3::lerp(start,end,interpolationValue);
+        Vec3f currentPointPos = Vec3f::lerp(start,end,interpolationValue);
         points[i].position=currentPointPos;
         points[i].previousPosition=currentPointPos;
     }
@@ -195,39 +197,39 @@ void POBJ_Cable::createCable(int pointCount,Vec3 start,Vec3 end){
     
     //===CABLE VARIANT===//
     cableVariant=POBJ_Cable::variantCounter++ % POBJ_Cable::VARIANT_COUNT;
-    cableTextureMatrix=Mat3::scaling(1.0f/float(POBJ_Cable::VARIANT_COUNT),1.0f)*Mat3::translation(float(cableVariant),0.0f);
+    cableTextureMatrix=Mat3f::scaling(1.0f/float(POBJ_Cable::VARIANT_COUNT),1.0f)*Mat3f::translation(float(cableVariant),0.0f);
 }
 
 void POBJ_Cable::onDraw(){
-    std::vector<Mat4> matrices;
+    std::vector<Mat4f> matrices;
     matrices.reserve(points.size()+1);
     //first should be identity
-    matrices.push_back(Mat4());
+    matrices.push_back(Mat4f());
     //main cable model
     for(CablePoint& point : points){
-        Mat4& matrix=point.matrix;
+        Mat4f& matrix=point.matrix;
         matrices.push_back(matrix);
-        //Engine::renderer->drawModelWithMatrix(EngineAssets::mAxis,matrix,Mat4(),EngineAssets::tAxis);    
+        //Engine::renderer->drawModelWithMatrix(EngineAssets::mAxis,matrix,Mat4f(),EngineAssets::tAxis);    
     }
 
     Engine::renderer->setUVMatrix(cableTextureMatrix);
 
     Engine::renderer->uploadMatrixList(matrices);
-    Engine::renderer->drawModelAt(EngineAssets::mCableModel,Vec3(0.0f),Vec3(0.0f),Vec3(1.0f),EngineAssets::tCable);
+    Engine::renderer->drawModelAt(EngineAssets::mCableModel,Vec3f(0.0f),Vec3f(0.0f),Vec3f(1.0f),EngineAssets::tCable);
 
     //reset the matrix. will probably restructure this to speed it up later so it doesnt reset every time
-    Engine::renderer->setUVMatrix(Mat3());
+    Engine::renderer->setUVMatrix(Mat3f());
 
     //draw cable ends
     //move these later
     //or might just change to be handled better in the future instead of using matrices
-    Mat4 rotateStart={
+    Mat4f rotateStart={
         0.0f,0.0,1.0,0.0,
         -1.0f,0.0,0.0,0.0,
         0.0f,-1.0,0.0,0.0,
         0.0f,0.0,0.0,1.0
     };
-    Mat4 rotateEnd={
+    Mat4f rotateEnd={
         0.0f,0.0,1.0,0.0,
         1.0f,0.0,0.0,0.0,
         0.0f,1.0,0.0,0.0,
@@ -238,7 +240,7 @@ void POBJ_Cable::onDraw(){
     CablePoint& end = points.back();
 
     Engine::renderer->drawModelWithMatrix(EngineAssets::mCableEnd,start.matrix*rotateStart,start.inverseRotationMatrix*rotateStart,EngineAssets::tRack);
-    Engine::renderer->drawModelWithMatrix(EngineAssets::mCableEnd,end.matrix*rotateEnd,Mat4(),EngineAssets::tRack);
+    Engine::renderer->drawModelWithMatrix(EngineAssets::mCableEnd,end.matrix*rotateEnd,Mat4f(),EngineAssets::tRack);
 }
 
 int POBJ_Cable::createPointHitbox(CablePoint& point)
@@ -247,7 +249,7 @@ int POBJ_Cable::createPointHitbox(CablePoint& point)
     Hitbox& hitbox = HitboxManager::hitboxes[hitboxID];
     
     const float hitboxSize = 0.5f;
-    hitbox.bounds = Vec3(hitboxSize);
+    hitbox.bounds = Vec3f(hitboxSize);
     
     CablePoint* pointPtr = &point;
     hitbox.mouseDown=[pointPtr]{
@@ -261,7 +263,7 @@ int POBJ_Cable::createPointHitbox(CablePoint& point)
             pointPtr->connectToSocket();
         }
     };
-    hitbox.onDrag=[pointPtr](Vec2 delta,Vec2 mousePos){
+    hitbox.onDrag=[pointPtr](Vec2f delta,Vec2f mousePos){
         //put this as a constant somewhere since its the same as the distance the plugs should be at
         const float zIntersectValue = 1.2f;
         pointPtr->position=Engine::screenPosToZPlane(mousePos,zIntersectValue);
@@ -280,9 +282,9 @@ int POBJ_Cable::createPointHitbox(CablePoint& point)
             //ignore sockets that are taken
             if(socket->connectedPoint) continue;
 
-            Vec3 difference = pointPtr->position-socket->worldTranslation;
+            Vec3f difference = pointPtr->position-socket->worldTranslation;
             //probably dont even need this to be squared yet
-            Vec3 differenceSquared = difference*difference;
+            Vec3f differenceSquared = difference*difference;
             float distanceSquared = differenceSquared.x+differenceSquared.y+differenceSquared.z;
             if((!closestSocket)||(distanceSquared<closestDistanceSquared)){
                 closestSocket=socket;
@@ -307,6 +309,7 @@ int POBJ_Cable::createPointHitbox(CablePoint& point)
 
     return hitboxID;
 }
+#include "../../UI/UI.h"
 
 void OBJ_Module::createFrom(ModuleData *moduleData)
 {
@@ -315,27 +318,30 @@ void OBJ_Module::createFrom(ModuleData *moduleData)
 
     mainHitboxID=HitboxManager::createHitboxID();
     auto& hitbox = HitboxManager::hitboxes[mainHitboxID];
-    hitbox.bounds=Vec3(float(width),float(height),1.0f)*0.5f;
+    hitbox.bounds=Vec3f(float(width),float(height),1.0f)*0.5f;
     Hitbox* hbptr=&hitbox;
-    hitbox.onDrag=[this,hbptr](Vec2 delta, Vec2 mousePos){
-        Vec2 prevPos = mousePos-delta;
+    hitbox.onDrag=[this,hbptr](Vec2f delta, Vec2f mousePos){
+        Vec2f prevPos = mousePos-delta;
 
         const float zValue = 0.0f;
 
-        Vec3 pointA = Engine::screenPosToZPlane(prevPos,zValue);
-        Vec3 pointB = Engine::screenPosToZPlane(mousePos,zValue);
+        Vec3f pointA = Engine::screenPosToZPlane(prevPos,zValue);
+        Vec3f pointB = Engine::screenPosToZPlane(mousePos,zValue);
 
-        Vec3 delta3D = pointB-pointA;
+        Vec3f delta3D = pointB-pointA;
         this->truePosition+=delta3D;
-        this->setPosition(Vec3::round(this->truePosition));
+        this->setPosition(Vec3f::round(this->truePosition));
         
         //std::cout<<"dragging: "<< delta3D.toString()<<"\n";
+    };
+    hitbox.rightClick = [this]{
+        UI::openModuleContext(this);        
     };
 
     //TODO: FIX THIS LATERRRR
     for (const juce::var& obj : moduleData->layout){
         juce::String componentType = obj.getProperty("type", "[NONE]");
-        std::cout<<componentType<<"\n";
+        //std::cout<<componentType<<"\n";
 
         OBJ_Component* component;
         //MOVE ALL THIS STUFF TO FUNCTIONS LATER
@@ -350,9 +356,9 @@ void OBJ_Module::createFrom(ModuleData *moduleData)
         }
 
         //read the values like position and stuff
-        Vec3 vPosition = readVec3FromObj(obj["position"]);
-        Vec3 vRotation = readVec3FromObj(obj["rotation"]);
-        Vec3 vScale = readVec3FromObj(obj["scale"], Vec3(1.0f));
+        Vec3f vPosition = readVec3FromObj(obj["position"]);
+        Vec3f vRotation = readVec3FromObj(obj["rotation"]);
+        Vec3f vScale = readVec3FromObj(obj["scale"], Vec3f(1.0f));
 
         component->setTransform(vPosition,vRotation,vScale);
         component->initComponent(obj,*moduleData);
@@ -360,10 +366,42 @@ void OBJ_Module::createFrom(ModuleData *moduleData)
         addChild(component);
     }
 }
-void OBJ_Module::onTransformChange(){
+
+
+void Object::deleteObj(){
+    active=false;
+}
+void OBJ_Module::deleteObj()
+{
+    //dettatch all cables
+    for (Object* child : children) {
+            child->deleteObj();
+    }
+    HitboxManager::deleteHitbox(mainHitboxID);
+    active=false;
+}
+void OBJ_Comp_Socket::deleteObj()
+{
+    //detatch any connected cables
+    if(connectedPoint){
+        //might need to change where this is idk
+        connectedPoint->lockRotation=false;
+        connectedPoint->fixed=false;
+        connectedPoint->detachFromSocket();
+    }
+    active=false;
+}
+void OBJ_Comp_Input::deleteObj()
+{
+    HitboxManager::deleteHitbox(hitboxID);
+    active=false;
+}
+
+void OBJ_Module::onTransformChange()
+{
     //update the hitbox position
     auto& hitbox = HitboxManager::hitboxes[mainHitboxID];
-    hitbox.position=transform.position-(hitbox.bounds*Vec3{-1.0f,-1.0f,1.0f});
+    hitbox.position=transform.position-(hitbox.bounds*Vec3f{-1.0f,-1.0f,1.0f});
 }
 
 void OBJ_Comp_Mesh::onDraw()
@@ -375,6 +413,7 @@ void OBJ_Comp_Socket::onDraw()
 {
     Engine::renderer->drawModelWithMatrix(EngineAssets::mCablePort,matrix,normalMatrix,EngineAssets::tRack);
 }
+
 void OBJ_Comp_Input::onDraw()
 {
     if(!animation) return;
@@ -400,9 +439,9 @@ void OBJ_Comp_Input::initComponent(const juce::var &fromObject,ModuleData& modul
     Hitbox& hitbox = HitboxManager::hitboxes[hitboxID];
     hitbox.bounds=animation->hitboxSize;
 
-    hitbox.onDrag = [this](Vec2 delta,Vec2 mousePos){
+    hitbox.onDrag = [this](Vec2f delta,Vec2f mousePos){
         const float sensitivity=0.005f;
-        this->values+=delta*Vec2(1.0f,-1.0f)*sensitivity;
+        this->values+=delta*Vec2f(1.0f,-1.0f)*sensitivity;
         this->values.x=std::max(this->values.x,0.0f);
         this->values.y=std::max(this->values.y,0.0f);
         this->values.x=std::min(this->values.x,1.0f);
@@ -426,17 +465,16 @@ void CablePoint::connectToSocket()
     lockRotation=true;
     fixed=true;
     //the rubber part of the plug is 1.0 and the socket rim is 0.2
-    Vec3 positionOffset = {0.0f,0.0f,1.2f};
+    Vec3f positionOffset = {0.0f,0.0f,1.2f};
     position=connectedSocket->worldTranslation+positionOffset;
     lookAtSocket(*connectedSocket);
     connectedSocket->connectedPoint=this;
 }
 void CablePoint::detachFromSocket()
 {
-    if(connectedSocket){
-        connectedSocket->connectedPoint=nullptr;
-        connectedSocket=nullptr;
-    }
+    if(!connectedSocket) return;
+    connectedSocket->connectedPoint=nullptr;
+    connectedSocket=nullptr;
 }
 void CablePoint::lookAtSocket(OBJ_Comp_Socket &socket)
 {
