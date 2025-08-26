@@ -1,7 +1,12 @@
 # Polyrack
 Polyrack is a 3D eurorack style plugin thats focused on making the creation of modules easy using an easy to use editor.
 ### Requirements
-To compile polyrack you mainly just need CMake. The editor, Polyrack Studio, is able to run in any browser. You probably wont be able to run the main plugin for now though as it requres to have assets in %appdata%/polyrack/assets to run
+To compile polyrack you will need:
+* Windows
+* CMake
+* Python
+
+> The folders inside of the "appdata" folder need to be pasted into %appdata%/polyrack for the program to work correctly.
 
 # Creating a module
 The Polyrack Studio editor is intented to make module creation simple and easy.
