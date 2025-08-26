@@ -60,27 +60,20 @@ struct Vec2 {
 };
 template<typename T = float>
 struct Vec3 {
-    T x,y,z;
-
+    union {
+        struct { float x, y, z; };
+        float data[3];
+    };
+ 
     Vec3() : x(0), y(0), z(0) {}
     Vec3(T x, T y, T z) : x(x), y(y), z(z) {}
     explicit Vec3(T scalar) : x(scalar), y(scalar), z(scalar) {}
     
     T& operator[](int index) {
-        switch (index) {
-        case 0: return x;
-        case 1: return y;
-        case 2: return z;
-        default: throw std::out_of_range("Vec3 index out of range");
-        }
+        return data[index];
     }
     const T& operator[](int index) const {
-        switch (index) {
-        case 0: return x;
-        case 1: return y;
-        case 2: return z;
-        default: throw std::out_of_range("Vec3 index out of range");
-        }
+        return data[index];
     }
 
     Vec3 operator+(const Vec3& other) const { return Vec3(x + other.x, y + other.y, z + other.z); }
@@ -162,8 +155,18 @@ struct Vec3 {
 };
 template<typename T = float>
 struct Vec4 {
-    T x, y, z, w;
+    union {
+        struct { float x, y, z, w; };
+        float data[4];
+    };
     
+    T& operator[](int index) {
+        return data[index];
+    }
+    const T& operator[](int index) const {
+        return data[index];
+    }
+
     Vec4() : x(0), y(0), z(0), w(0) {}
     Vec4(T x, T y, T z, T w) : x(x), y(y), z(z), w(w) {}
     explicit Vec4(T scalar) : x(scalar), y(scalar), z(scalar), w(scalar) {}
@@ -218,10 +221,10 @@ struct Mat4 {
             data[i] = (i % 5 == 0) ? T(1) : T(0); // identity
     }
     Mat4(
-        float m00, float m01, float m02, float m03,
-        float m10, float m11, float m12, float m13,
-        float m20, float m21, float m22, float m23,
-        float m30, float m31, float m32, float m33
+        T m00, T m01, T m02, T m03,
+        T m10, T m11, T m12, T m13,
+        T m20, T m21, T m22, T m23,
+        T m30, T m31, T m32, T m33
     ) {
         data[0] = m00; data[4] = m01; data[8] = m02;  data[12] = m03;
         data[1] = m10; data[5] = m11; data[9] = m12;  data[13] = m13;
@@ -236,8 +239,8 @@ struct Mat4 {
         0.0f, 0.0f, 0.0f, 1.0f
     };
     
-    float& operator()(int row, int col) { return data[col * 4 + row]; }
-    const float& operator()(int row, int col) const { return data[col * 4 + row]; }
+    T& operator()(int row, int col) { return data[col * 4 + row]; }
+    const T& operator()(int row, int col) const { return data[col * 4 + row]; }
 
     // Multiply two matrices
     Mat4 operator*(const Mat4<T>& other) const {
@@ -255,7 +258,7 @@ struct Mat4 {
     }
 
     // Translation matrix
-    static Mat4 translation(float x, float y, float z) {
+    static Mat4 translation(T x, T y, T z) {
         Mat4 result;
         result(0, 3) = x;
         result(1, 3) = y;
@@ -266,7 +269,7 @@ struct Mat4 {
         return translation(v.x, v.y, v.z);
     }
     // Scaling matrix
-    static Mat4 scaling(float x, float y, float z) {
+    static Mat4 scaling(T x, T y, T z) {
         Mat4 result;
         result(0, 0) = x;
         result(1, 1) = y;
@@ -325,7 +328,7 @@ struct Mat4 {
         return rotation(v).fastInverseRT();
     }
     static Mat4 transform(const Vec3<T>& translation,const Vec3<T>& rotation,const Vec3<T>& scale){
-        return Mat4::translation(translation)*Mat4::translation(rotation)*Mat4::translation(scale);
+        return Mat4::translation(translation)*Mat4::rotation(rotation)*Mat4::scaling(scale);
     }
 
     //perspective
@@ -525,17 +528,17 @@ struct Mat3 {
     }
 
     Mat3(
-        float m00, float m01, float m02,
-        float m10, float m11, float m12,
-        float m20, float m21, float m22
+        T m00, T m01, T m02,
+        T m10, T m11, T m12,
+        T m20, T m21, T m22
     ) {
         data[0] = m00; data[3] = m01; data[6] = m02;
         data[1] = m10; data[4] = m11; data[7] = m12;
         data[2] = m20; data[5] = m21; data[8] = m22;
     }
 
-    float& operator()(int row, int col) { return data[col * 3 + row]; }
-    const float& operator()(int row, int col) const { return data[col * 3 + row]; }
+    T& operator()(int row, int col) { return data[col * 3 + row]; }
+    const T& operator()(int row, int col) const { return data[col * 3 + row]; }
 
     // Multiply two matrices
     Mat3 operator*(const Mat3& other) const {
@@ -552,13 +555,13 @@ struct Mat3 {
         return result;
     }
 
-    static Mat3 translation(float x, float y){
+    static Mat3 translation(T x, T y){
         Mat3 result;
         result(0,2)=x;
         result(1,2)=y;
         return result;
     }
-    static Mat3 scaling(float x, float y){
+    static Mat3 scaling(T x, T y){
         Mat3 result;
         result(0,0)=x;
         result(1,1)=y;

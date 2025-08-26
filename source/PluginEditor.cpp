@@ -8,6 +8,11 @@
 
 //for debug
 #define DEBUG_CONSOLE_ENABLED true
+#define RUN_BENCHMARKS false
+#if RUN_BENCHMARKS
+#include "benchmarks.h"
+#endif
+
 
 #include <iostream>
 #if DEBUG_CONSOLE_ENABLED
@@ -59,6 +64,10 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
     setSize(900, 900);
 
     addAndMakeVisible(mainRenderer);
+
+    #if RUN_BENCHMARKS
+    benchmarks::runAll();
+    #endif
 }
 
 AudioPluginAudioProcessorEditor::~AudioPluginAudioProcessorEditor(){}

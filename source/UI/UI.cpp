@@ -17,7 +17,7 @@ void UIObject::onDraw(){
     }else{
         stylePtr=&UIManager::style.normal;
     }
-
+    
     Vec2f& position = screenPositionPixels;
     Vec2f& size = screenSizePixels;
 
