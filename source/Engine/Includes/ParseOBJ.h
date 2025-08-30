@@ -39,15 +39,14 @@ inline std::vector<Vertex> parseOBJString(const std::string& objString) {
                 sscanf(vertStr.c_str(), "%d/%d/%d", &vIdx, &tIdx, &nIdx);
 
                 Vertex v{};
-                if (vIdx)  v.xyz = positions[vIdx - 1];
-                if (nIdx)  v.nxyz = normals[nIdx - 1];
+                if (vIdx)  v.xyz(positions[vIdx - 1]);
+                if (nIdx)  v.nxyz(normals[nIdx - 1]);
                 if (tIdx) {
                     v.u = texcoords[tIdx - 1].x;
                     v.v = texcoords[tIdx - 1].y;
                 }
 
-                v.rgb = Vec3f{1.0f, 1.0f, 1.0f}; // Default white
-                v.a = 1.0f;
+                v.rgba(1.0f);
 
                 vertices.push_back(v);
             }

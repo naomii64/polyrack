@@ -4,6 +4,7 @@
 #include "../Engine/TextManager.h"
 #include "../Engine/ModuleManager.h"
 
+
 std::vector<UIObject> UIManager::objects;
 UIStyleSet UIManager::style;
 int UIManager::hoveredObject=-1;
@@ -33,7 +34,7 @@ void UIObject::onDraw(){
     Vec3f textDrawLocation(0.0f);
     Vec3f textDrawScale(1.0f);
     Vec3f textDrawRotation(0.0f);
-    
+
     textDrawLocation.x=screenPositionPixels.x+padding;
     textDrawLocation.y=screenPositionPixels.y-padding+screenSizePixels.y;
     

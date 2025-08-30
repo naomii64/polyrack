@@ -26,8 +26,16 @@ public:
 	bool canBeSeen();
     void disablePerspective();
 
+	void setDrawTint(const Vec4f& color);
+	void setDrawTexture(const int& ID);
+	void loadModelMatrix(Mat4f& matrix);
+	void loadModel(RenderableObject &model);
+	void unloadModel();
+	void drawLoadedModel();
+
+	RenderableObject* loadedModel=nullptr;
     void drawModelAt(
-		Model& model, 
+		RenderableObject& model, 
 		Vec3f position = {0.0f,0.0f,0.0f}, 
 		Vec3f rotation = {0.0f,0.0f,0.0f}, 
 		Vec3f scale = {1.0f,1.0f,1.0f}, 
@@ -35,10 +43,11 @@ public:
 		Vec4f tint = {1.0f,1.0f,1.0f,1.0f}
 	);
 	void drawModelWithMatrix(
-		Model &model, 
+		RenderableObject &model, 
 		Mat4f &matrix,
 		Mat4f &normalMatrix,
-		int textureID=0
+		int textureID=0,
+		Vec4f tint={1.0f,1.0f,1.0f,1.0f}
 	);
 	void resizeBuffer(unsigned int newWidth,unsigned int newHeight);
 	void createTextureFromImage(const juce::Image& image);
@@ -85,6 +94,7 @@ public:
 
 	void setCameraPosition(Vec3f position,Vec3f rotation={0.0f,0.0f,0.0f});
 	void uploadMatrixList(std::vector<Mat4f>& matrices);
+	void uploadMatrixList(std::array<Mat4f, 17>& matrices);
 
 	// //for typing and debugging
     // bool keyPressed(const juce::KeyPress& key) override {

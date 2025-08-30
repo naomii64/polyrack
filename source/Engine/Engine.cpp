@@ -4,6 +4,8 @@ OBJ_Scene* Engine::scene=nullptr;
 std::vector<std::unique_ptr<Object>> Engine::objects;
 std::vector<PhysicsObject*> Engine::physicsObjects;
 std::vector<OBJ_Comp_Socket*> Engine::sockets;
+size_t Engine::nextTickedPhysicsObject = 0;
+
 Vec2f Engine::mousePosition;
 //engine renderer
 Renderer* Engine::renderer=nullptr;
@@ -18,28 +20,27 @@ void Engine::calculateDeltaTime(){
     deltaTime=seconds-previousSeconds;
     previousSeconds=seconds;
 }
-void Engine::physicsTick()
-{
-    for(PhysicsObject* obj :physicsObjects){
-        obj->physicsTick(physicsDelta);
-    }
-}
 void Engine::runPhysics()
 {
-    Engine::physicsAccumulator+=Engine::deltaTime;
-    if(float(Engine::physicsAccumulator)>Engine::physicsDelta){
-        Engine::physicsAccumulator=0.0;
-        Engine::physicsTick();
+    if (physicsObjects.empty()) return;
+    const float percentageOfPhysicsTick = float(Engine::deltaTime)/Engine::physicsDelta;
+    size_t objectsToTick = std::trunc(float(Engine::physicsObjects.size())*percentageOfPhysicsTick);
+    objectsToTick=std::min(objectsToTick,Engine::physicsObjects.size());
+
+    for(size_t i=0;i<objectsToTick;i++){
+        physicsObjects[Engine::nextTickedPhysicsObject]->physicsTick(Engine::physicsDelta);
+        Engine::nextTickedPhysicsObject++;
+        Engine::nextTickedPhysicsObject%=Engine::physicsObjects.size();
     }
 }
 void Engine::init(){
     //create a scene
-    scene = &static_cast<OBJ_Scene&>(*objects.emplace_back(std::make_unique<OBJ_Scene>()));
+    scene = &Engine::createObject<OBJ_Scene>();
 
     //test stuff
     //create a bunch of cables
-    for(int i=0;i<10;i++){
-        auto& newObj = static_cast<POBJ_Cable&>(*objects.emplace_back(std::make_unique<POBJ_Cable>()));
+    for(int i=0;i<50;i++){
+        auto& newObj = Engine::createObject<POBJ_Cable>();
         physicsObjects.push_back(&newObj);
         int cablePoints=16;
         newObj.desiredDistance=1.0f;
@@ -48,13 +49,15 @@ void Engine::init(){
         newObj.points[0].position={float(i),0.0f,0.0f};
 
         //attatch the test object to the scene object
-        scene->children.push_back(&newObj);
+        scene->addChild(&newObj);
         newObj.parent=scene;
     }
 }
 void Engine::draw(){
     if(scene==nullptr)return;
     scene->callDraw();
+
+    POBJ_Cable::drawAll();
 }
 
 Vec3f Engine::screenPosToZPlane(Vec2f screenPos,float zValue)

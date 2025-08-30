@@ -70,6 +70,7 @@ void PhysicsObject::physicsTick(float delta) {}
 
 //subclasses
 int POBJ_Cable::variantCounter=0;
+std::vector<POBJ_Cable*> POBJ_Cable::allCables;
 void POBJ_Cable::applyGravityAndMomentum(float delta){
     for(CablePoint& point : points){
         if(point.fixed){
@@ -197,50 +198,64 @@ void POBJ_Cable::createCable(int pointCount,Vec3f start,Vec3f end){
     
     //===CABLE VARIANT===//
     cableVariant=POBJ_Cable::variantCounter++ % POBJ_Cable::VARIANT_COUNT;
-    cableTextureMatrix=Mat3f::scaling(1.0f/float(POBJ_Cable::VARIANT_COUNT),1.0f)*Mat3f::translation(float(cableVariant),0.0f);
+
+    allCables.push_back(this);
 }
+void POBJ_Cable::drawAll(){
+    Engine::renderer->setDrawTint(Vec4f(1.0f));
+    //draw ends of cables
+    Engine::renderer->loadModel(EngineAssets::mCableEnd);
+    Engine::renderer->setDrawTexture(EngineAssets::tRack);
 
-void POBJ_Cable::onDraw(){
-    std::vector<Mat4f> matrices;
-    matrices.reserve(points.size()+1);
-    //first should be identity
-    matrices.push_back(Mat4f());
-    //main cable model
-    for(CablePoint& point : points){
-        Mat4f& matrix=point.matrix;
-        matrices.push_back(matrix);
-        //Engine::renderer->drawModelWithMatrix(EngineAssets::mAxis,matrix,Mat4f(),EngineAssets::tAxis);    
+    for(auto* cablePtr : allCables){
+        POBJ_Cable& cable = *cablePtr;
+
+        Mat4f rotateStart={
+            0.0f,0.0,1.0,0.0,
+            -1.0f,0.0,0.0,0.0,
+            0.0f,-1.0,0.0,0.0,
+            0.0f,0.0,0.0,1.0
+        };
+        Mat4f rotateEnd={
+            0.0f,0.0,1.0,0.0,
+            1.0f,0.0,0.0,0.0,
+            0.0f,1.0,0.0,0.0,
+            0.0f,0.0,0.0,1.0
+        };
+    
+        CablePoint& start = cable.points[0];
+        CablePoint& end = cable.points.back();
+
+        Engine::renderer->loadModelMatrix(start.matrix*rotateStart);
+        Engine::renderer->drawLoadedModel();
+        Engine::renderer->loadModelMatrix(end.matrix*rotateEnd);
+        Engine::renderer->drawLoadedModel();
     }
+    Engine::renderer->unloadModel();
 
-    Engine::renderer->setUVMatrix(cableTextureMatrix);
+    //draw the actual cable part
+    Engine::renderer->loadModel(EngineAssets::mCableModel);
+    Engine::renderer->setDrawTexture(EngineAssets::tCable);
+    Engine::renderer->loadModelMatrix(Mat4f());
+    
+    std::array<Mat4f,17> matrices;
 
-    Engine::renderer->uploadMatrixList(matrices);
-    Engine::renderer->drawModelAt(EngineAssets::mCableModel,Vec3f(0.0f),Vec3f(0.0f),Vec3f(1.0f),EngineAssets::tCable);
+    for(auto* cablePtr : allCables){
+        POBJ_Cable& cable = *cablePtr;
+        
+        size_t currentMatrix=1;
+        for(CablePoint& point : cable.points){
+            matrices[currentMatrix]=point.matrix;
+            currentMatrix++;
+        }
+        Engine::renderer->setUVMatrix(POBJ_Cable::cableVariantTextures[cable.cableVariant]);
 
-    //reset the matrix. will probably restructure this to speed it up later so it doesnt reset every time
+        Engine::renderer->uploadMatrixList(matrices);
+        
+        Engine::renderer->drawLoadedModel();
+    }
+    Engine::renderer->unloadModel();
     Engine::renderer->setUVMatrix(Mat3f());
-
-    //draw cable ends
-    //move these later
-    //or might just change to be handled better in the future instead of using matrices
-    Mat4f rotateStart={
-        0.0f,0.0,1.0,0.0,
-        -1.0f,0.0,0.0,0.0,
-        0.0f,-1.0,0.0,0.0,
-        0.0f,0.0,0.0,1.0
-    };
-    Mat4f rotateEnd={
-        0.0f,0.0,1.0,0.0,
-        1.0f,0.0,0.0,0.0,
-        0.0f,1.0,0.0,0.0,
-        0.0f,0.0,0.0,1.0
-    };
-
-    CablePoint& start = points[0];
-    CablePoint& end = points.back();
-
-    Engine::renderer->drawModelWithMatrix(EngineAssets::mCableEnd,start.matrix*rotateStart,start.inverseRotationMatrix*rotateStart,EngineAssets::tRack);
-    Engine::renderer->drawModelWithMatrix(EngineAssets::mCableEnd,end.matrix*rotateEnd,Mat4f(),EngineAssets::tRack);
 }
 
 int POBJ_Cable::createPointHitbox(CablePoint& point)
@@ -346,11 +361,11 @@ void OBJ_Module::createFrom(ModuleData *moduleData)
         OBJ_Component* component;
         //MOVE ALL THIS STUFF TO FUNCTIONS LATER
         if (componentType == "static mesh") {
-            component = &static_cast<OBJ_Comp_Mesh&>(*Engine::objects.emplace_back(std::make_unique<OBJ_Comp_Mesh>()));
+            component = &Engine::createObject<OBJ_Comp_Mesh>();
         } else if (componentType == "socket") {
-            component = &static_cast<OBJ_Comp_Socket&>(*Engine::objects.emplace_back(std::make_unique<OBJ_Comp_Socket>()));
+            component = &Engine::createObject<OBJ_Comp_Socket>();
         } else if (componentType == "input") {
-            component = &static_cast<OBJ_Comp_Input&>(*Engine::objects.emplace_back(std::make_unique<OBJ_Comp_Input>()));
+            component = &Engine::createObject<OBJ_Comp_Input>();
         }else{
             continue;
         }

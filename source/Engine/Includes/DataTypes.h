@@ -23,7 +23,10 @@ struct Transform;
 
 template<typename T = float>
 struct Vec2 {
-    T x, y;
+    union {
+        struct { T x, y; };
+        T data[2];
+    };
     
     Vec2() : x(0), y(0) {}
     Vec2(T x, T y) : x(x), y(y) {}
@@ -55,14 +58,15 @@ struct Vec2 {
 
         return "("+xString+","+yString+")";
     }
-
+    operator std::string() { return toString(); }
+    
     static bool pointWithinRect(Vec2 point,Vec2 min, Vec2 max){ return (point.x>=min.x)&&(point.y>=min.y)&&(point.x<=max.x)&&(point.y<=max.y); }
 };
 template<typename T = float>
 struct Vec3 {
     union {
-        struct { float x, y, z; };
-        float data[3];
+        struct { T x, y, z; };
+        T data[3];
     };
  
     Vec3() : x(0), y(0), z(0) {}
@@ -149,15 +153,16 @@ struct Vec3 {
         std::string xString=std::to_string(x);
         std::string yString=std::to_string(y);
         std::string zString=std::to_string(z);
-
         return "("+xString+","+yString+","+zString+")";
     }
+    operator std::string() { return toString(); }
 };
 template<typename T = float>
 struct Vec4 {
     union {
-        struct { float x, y, z, w; };
-        float data[4];
+        struct { T r, g, b, a; };
+        struct { T x, y, z, w; };
+        T data[4];
     };
     
     T& operator[](int index) {
@@ -191,9 +196,27 @@ struct Vec4 {
 
     Vec4 operator-() const { return Vec4( -x, -y, -z, -w ); }
 
-    Vec2<T> xy() const { return Vec2(x, y); }
-    Vec2<T> zw() const { return Vec2(z, w); }
+    #define ACCESSOR2(ab,a,b) \
+        Vec2<T> ab() const { return Vec2(a, b); } \
+        void ab(Vec2<T> vector) { a=vector.x;b=vector.y; } \
+        void ab(T new_a, T new_b) { a=new_a;b=new_b; } \
+        void ab(T scalar) { a=scalar;b=scalar; }
     
+    #define ACCESSOR3(abc,a,b,c) \
+        Vec3<T> abc() const { return Vec3(a, b, c); } \
+        void abc(Vec3<T> vector) { a=vector.x;b=vector.y;c=vector.z; } \
+        void abc(T new_a, T new_b, T new_c) { a=new_a;b=new_b;c=new_c;} \
+        void abc(T scalar) { a=scalar;b=scalar;c=scalar; }
+    
+
+    ACCESSOR2(xy,x,y)
+    ACCESSOR2(zw,z,w)
+
+    ACCESSOR3(xyz,x,y,z)
+    
+
+    #undef ACCESSOR2
+
     static Vec4 random() {
         return Vec4(
             T(rand()) / RAND_MAX,
@@ -211,7 +234,9 @@ struct Vec4 {
         
         return "("+xString+","+yString+","+zString+","+wString+")";
     }
+    operator std::string() { return toString(); }
 };
+
 template<typename T = float>
 struct Mat4 {
     T data[16]; // column-major order

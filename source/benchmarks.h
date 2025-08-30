@@ -66,3 +66,27 @@ inline void runAll(){
 }
 
 }
+
+//FOR TESTINGGG
+float secondsSinceMidnight() {
+    using namespace std::chrono;
+
+    // current time
+    auto now = system_clock::now();
+
+    // convert to time_t (calendar time)
+    std::time_t now_c = system_clock::to_time_t(now);
+
+    // break down into local time
+    std::tm local_tm = *std::localtime(&now_c);
+
+    // reset to midnight (00:00:00) today
+    local_tm.tm_hour = 0;
+    local_tm.tm_min = 0;
+    local_tm.tm_sec = 0;
+
+    auto midnight = system_clock::from_time_t(std::mktime(&local_tm));
+
+    // difference in seconds (float)
+    return duration<float>(now - midnight).count();
+}

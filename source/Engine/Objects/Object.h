@@ -130,7 +130,6 @@ class POBJ_Cable : public PhysicsObject{
     public:
         //overrides
         void physicsTick(float delta) override;
-        void onDraw() override;
         
         void createCable(int pointCount,Vec3f start={0.0f,0.0f,0.0f},Vec3f end={0.0f,0.0f,0.0f});
         
@@ -146,10 +145,24 @@ class POBJ_Cable : public PhysicsObject{
 
         static inline constexpr int VARIANT_COUNT=6;
         static int variantCounter;
+        
+        //MIGHT BE ABLE TO BE CONSTEXPR and run on compile time later
+        static inline const std::array<Mat3f,POBJ_Cable::VARIANT_COUNT> generateVariantTextureMatrices(){
+            std::array<Mat3f, POBJ_Cable::VARIANT_COUNT> arr{};
+
+            for (size_t i = 0; i < POBJ_Cable::VARIANT_COUNT; ++i) {
+                arr[i] = Mat3f::scaling(1.0f/float(POBJ_Cable::VARIANT_COUNT),1.0f)*Mat3f::translation(float(i),0.0f);
+            }
+
+            return arr;
+        }
+        static inline const auto cableVariantTextures=generateVariantTextureMatrices();
+        int cableVariant;
+        
+        static void drawAll();//cables will be drawn all at once to save time
+        static std::vector<POBJ_Cable*> allCables;
     private:
         bool hasBeenCreated=false;
-        int cableVariant;
-        Mat3f cableTextureMatrix;
         //separate physics into steps for readability
         void applyGravityAndMomentum(float delta);
         void applyConstraints();

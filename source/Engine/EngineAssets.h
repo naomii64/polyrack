@@ -10,12 +10,11 @@ namespace EngineAssets{
     extern Model mCableEnd;
     extern Model mTestSquare;
     extern Model mCube;
-
-    extern Model mWireCube;
     extern Model mAxis;
-
     extern Model mCableModel;
     extern Model mBorderRectModel;
+
+    extern Wireframe wCube;
     //textuerIDs
     extern int tBorder;
     extern int tBorderHovered;

@@ -7,7 +7,7 @@ TextureManager::~TextureManager(){}
 
 int TextureManager::addTexture(juce::Image& image){
     textures.emplace_back(image);
-    return textures.size();
+    return int(textures.size());
 }
 juce::Image TextureManager::getTextureSheet() {
 

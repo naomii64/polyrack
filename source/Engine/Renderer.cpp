@@ -9,8 +9,13 @@
 #define USE_FRAME_BUFFER false
 
 #include "../Defines.h"
+
 #if draw_hitboxes
 #include "Hitboxes.h"
+#endif
+
+#if monitor_performance
+#include "../performance.h"
 #endif
 
 #include "../shaders/shaders.h"
@@ -95,59 +100,71 @@ Renderer::~Renderer(){
 //========================//
 
 //draws a model with a given transform without modifying it. great for models that get reused
-void Renderer::drawModelAt(Model& model, Vec3f position, Vec3f rotation, Vec3f scale,int textureID,Vec4f tint){
+void Renderer::drawModelAt(RenderableObject& model, Vec3f position, Vec3f rotation, Vec3f scale,int textureID,Vec4f tint){
     Vec3f usedScale=scale;
-    if(invertY){
-        usedScale.y*=-1.0f;
-    }
-    Mat4f mat=Mat4f::transform(position,rotation,scale);
+    if(invertY) usedScale.y*=-1.0f;
+    Mat4f mat=Mat4f::transform(position,rotation,usedScale);
     Mat4f nmat{};
     
-    drawModelWithMatrix(model,mat,nmat,textureID);
+    drawModelWithMatrix(model,mat,nmat,textureID,tint);
 }
-void Renderer::drawModelWithMatrix(Model &model, Mat4f &matrix,Mat4f &normalMatrix, int textureID)
+void Renderer::setDrawTint(const Vec4f& color){
+    shaderProgram->setUniform("uTintColor",color.x,color.y,color.z,color.w);
+}
+void Renderer::setDrawTexture(const int& ID){
+    shaderProgram->setUniform("uTextureID",ID);
+}
+void Renderer::loadModel(RenderableObject &model){
+    auto& gl = openGLContext.extensions;
+
+    loadedModel=&model;
+
+    gl.glBindBuffer(juce::gl::GL_ARRAY_BUFFER, model.vbo);
+
+    gl.glEnableVertexAttribArray(0);
+    gl.glEnableVertexAttribArray(1);
+    gl.glEnableVertexAttribArray(2);
+    gl.glEnableVertexAttribArray(3);
+
+    gl.glVertexAttribPointer(0, 3, juce::gl::GL_FLOAT, juce::gl::GL_FALSE, sizeof(Vertex), nullptr);                        //xyz
+    gl.glVertexAttribPointer(1, 3, juce::gl::GL_FLOAT, juce::gl::GL_FALSE, sizeof(Vertex), (GLvoid*)(sizeof(float) * 3));   //nxyz
+    gl.glVertexAttribPointer(2, 4, juce::gl::GL_FLOAT, juce::gl::GL_FALSE, sizeof(Vertex), (GLvoid*)(sizeof(float) * 6));   //rgba
+    gl.glVertexAttribPointer(3, 2, juce::gl::GL_FLOAT, juce::gl::GL_FALSE, sizeof(Vertex), (GLvoid*)(sizeof(float) * 10));  //uv
+        
+    if (model.hasGroupBuffer) {
+        gl.glBindBuffer(juce::gl::GL_ARRAY_BUFFER, model.groupVBO);
+        gl.glEnableVertexAttribArray(4); // or any unused attribute slot
+        juce::gl::glVertexAttribIPointer(4, 1, juce::gl::GL_UNSIGNED_BYTE, juce::gl::GL_FALSE, 0);
+    }
+}
+void Renderer::unloadModel(){
+    auto& gl = openGLContext.extensions;
+    gl.glDisableVertexAttribArray(0);
+    gl.glDisableVertexAttribArray(1);
+    gl.glDisableVertexAttribArray(2);
+    gl.glDisableVertexAttribArray(3);
+    gl.glDisableVertexAttribArray(4);
+};
+void Renderer::drawLoadedModel(){
+    juce::gl::glDrawArrays(loadedModel->drawType, 0, loadedModel->vertexCount);
+    
+}
+void Renderer::loadModelMatrix(Mat4f& matrix){
+    shaderProgram->setUniformMat4("uModelMatrix",matrix.data, 1, juce::gl::GL_FALSE);
+}
+void Renderer::drawModelWithMatrix(RenderableObject &model, Mat4f &matrix,Mat4f &normalMatrix, int textureID,Vec4f tint)
 {
-
-        auto& gl = openGLContext.extensions;
-
-        gl.glBindBuffer(juce::gl::GL_ARRAY_BUFFER, model.vbo);
-
-        gl.glEnableVertexAttribArray(0);
-        gl.glEnableVertexAttribArray(1);
-        gl.glEnableVertexAttribArray(2);
-        gl.glEnableVertexAttribArray(3);
+        loadModel(model);
         
-        //xyz
-        gl.glVertexAttribPointer(0, 3, juce::gl::GL_FLOAT, juce::gl::GL_FALSE, sizeof(Vertex), nullptr);
-        //nxyz
-        gl.glVertexAttribPointer(1, 3, juce::gl::GL_FLOAT, juce::gl::GL_FALSE, sizeof(Vertex), (GLvoid*)(sizeof(float) * 3));
-        //rgba
-        gl.glVertexAttribPointer(2, 4, juce::gl::GL_FLOAT, juce::gl::GL_FALSE, sizeof(Vertex), (GLvoid*)(sizeof(float) * 6));
-        //uv
-        gl.glVertexAttribPointer(3, 2, juce::gl::GL_FLOAT, juce::gl::GL_FALSE, sizeof(Vertex), (GLvoid*)(sizeof(float) * 10));
-        
-        if (model.hasGroupBuffer) {
-            gl.glBindBuffer(juce::gl::GL_ARRAY_BUFFER, model.groupVBO);
-            gl.glEnableVertexAttribArray(4); // or any unused attribute slot
-            juce::gl::glVertexAttribIPointer(4, 1, juce::gl::GL_UNSIGNED_BYTE, juce::gl::GL_FALSE, 0);
-        }
-        
-
-
-        shaderProgram->setUniformMat4("uModelMatrix",matrix.data, 1, juce::gl::GL_FALSE);
+        loadModelMatrix(matrix);
         shaderProgram->setUniformMat4("uModelNormal", normalMatrix.data, 1, juce::gl::GL_FALSE);
         
-        shaderProgram->setUniform("uTextureID",textureID);
-        
-        shaderProgram->setUniform("uTintColor",1.0f,1.0f,1.0f,1.0f);
-        // Draw arrays instead of elements
-        juce::gl::glDrawArrays(juce::gl::GL_TRIANGLES, 0, model.vertexCount);
+        setDrawTexture(textureID);
+        setDrawTint(tint);
 
-        gl.glDisableVertexAttribArray(0);
-        gl.glDisableVertexAttribArray(1);
-        gl.glDisableVertexAttribArray(2);
-        gl.glDisableVertexAttribArray(3);
-        gl.glDisableVertexAttribArray(4);
+        drawLoadedModel();        
+
+        unloadModel();
 }
 //ui related ones
 void Renderer::drawRect(float x, float y, float width, float height, int textureID, Vec4f tint) {
@@ -256,7 +273,17 @@ void Renderer::uploadMatrixList(std::vector<Mat4f>& matrices)
 
     #undef gl
 }
+void Renderer::uploadMatrixList(std::array<Mat4f, 17>& matrices)
+{
+    #define gl juce::gl
+    
+    constexpr size_t matrixCount = 17;
 
+    shaderProgram->use();
+    gl::glUniformMatrix4fv(shaderProgram->getUniformIDFromName("uMatrices"), matrixCount, gl::GL_FALSE, matrices[0].data);
+
+    #undef gl
+}
 void Renderer::newOpenGLContextCreated()
 {
     AudioPluginAudioProcessorEditor::mainProcessEditor->onRendererLoad();
@@ -280,8 +307,9 @@ void Renderer::newOpenGLContextCreated()
     //enabling stuff
     gl::glEnable(gl::GL_BLEND);
     gl::glBlendFunc(gl::GL_SRC_ALPHA, gl::GL_ONE_MINUS_SRC_ALPHA);
-    gl::glEnable(gl::GL_CULL_FACE);
+    
     gl::glCullFace(gl::GL_BACK);
+    gl::glEnable(gl::GL_CULL_FACE);
 
     //==============================
     //load the main texture
@@ -342,10 +370,20 @@ void Renderer::newOpenGLContextCreated()
     //initialize engine
     Engine::renderer=this;
     Engine::init();
+
+    #if monitor_performance
+    Performance::init();
+    #endif
 }
 void Renderer::renderOpenGL(){
+    #if monitor_performance
+    Performance::frameStart();
+    #endif
     Engine::calculateDeltaTime();
+
+    PERF_START_FLAG(PHYSICS);
     Engine::runPhysics();
+    PERF_END_FLAG(PHYSICS);
 
     if(!canBeSeen()){return;}
     
@@ -370,19 +408,22 @@ void Renderer::renderOpenGL(){
     gl::glBindTexture(gl::GL_TEXTURE_2D, mainTexture.getTextureID());
     shaderProgram->setUniform("myTexture", 0);
     
-    
+    //gl::glEnable(gl::GL_CULL_FACE);
     gl::glEnable(gl::GL_DEPTH_TEST);
     gl::glDepthFunc(gl::GL_LEQUAL);
     shaderProgram->setUniformMat4("uViewMatrix", cameraMatrix, 1, gl::GL_FALSE);
     
     //======================
     //>>>>draw calls go here
-
-    //draw all the instances of modules
+    PERF_START_FLAG(RENDER_3D);
     Engine::draw();
+    PERF_END_FLAG(RENDER_3D);
+    
 
     #if draw_hitboxes
+    PERF_START_FLAG(RENDER_DEBUG);
     HitboxManager::drawAllHitBoxes(*this);
+    PERF_END_FLAG(RENDER_DEBUG);
     #endif
 
 
@@ -392,11 +433,18 @@ void Renderer::renderOpenGL(){
 
     gl::glClear( gl::GL_DEPTH_BUFFER_BIT);
 
+    PERF_START_FLAG(RENDER_UI);
     UI::mainUI.callDraw();
+    PERF_END_FLAG(RENDER_UI);
 
     //TEST THING FOR SHOWING THE TEXTURE
     if(juce::KeyPress::isKeyCurrentlyDown('g')) drawModelAt(EngineAssets::mTestSquare,Vec3f(0.0f),Vec3f(0.0f),{screenSize.x,screenSize.y,1.0f},0);
 
+    #if monitor_performance
+    PERF_START_FLAG(RENDER_DEBUG);
+    Performance::drawPerformanceData(this);
+    PERF_END_FLAG(RENDER_DEBUG);
+    #endif
     //>>>>end of draw cals
     //=====================
 
@@ -422,6 +470,10 @@ void Renderer::renderOpenGL(){
     gl::glBindVertexArray(fullscreenVAO);
     gl::glDrawElements(gl::GL_TRIANGLES, 6, gl::GL_UNSIGNED_INT, 0);
     gl::glBindVertexArray(0);
+    #endif
+
+    #if monitor_performance
+    Performance::frameEnd();
     #endif
 }
 void Renderer::createTextureRectsFromAtlas(TextureManager& atlas){

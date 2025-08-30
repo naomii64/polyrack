@@ -102,12 +102,11 @@ void HitboxManager::drawAllHitBoxes(Renderer& renderer)
     for(Hitbox& hitbox : hitboxes){
         if(!hitbox.active) continue;
         renderer.drawModelAt(
-            EngineAssets::mWireCube,
+            EngineAssets::wCube,
             hitbox.position,
             {0.0f,0.0f,0.0f},
             hitbox.bounds,
-            EngineAssets::tBlank,
-            {1.0f,1.0f,1.0f,0.5f}
+            EngineAssets::tBlank
         );
     }
 }

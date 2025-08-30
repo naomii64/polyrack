@@ -7,10 +7,11 @@ namespace EngineAssets{
     Model mCableEnd;
     Model mTestSquare;
     Model mCube;
-    Model mWireCube;
     Model mAxis;
     Model mCableModel;
     Model mBorderRectModel;
+
+    Wireframe wCube;
     //texture IDS
     int tBorder;
     int tBorderHovered;
@@ -30,23 +31,69 @@ namespace EngineAssets{
 
         model.createGeometry(Engine::renderer->openGLContext, parsed);
     }
+    void loadTexture(TextureManager& atlas ,int& texture, const juce::String& fileName){
+        texture = atlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile(fileName)));
+    }
+    
     void loadModels() {
         loadModel(mCablePort,"cable_socket.obj");
         loadModel(mCableEnd,"cable_end.obj");
-        
-        //primatives
         loadModel(mCube,"cube.obj");
         loadModel(mTestSquare,"test_square.obj");
-
-        //debugging stuff
-        loadModel(mWireCube,"wireFrameCube.obj");
         loadModel(mAxis,"axis.obj");
 
         createCableModel(Engine::renderer->openGLContext);
         createBorderRectModel(Engine::renderer->openGLContext);
-    }
-    void loadTexture(TextureManager& atlas ,int& texture, const juce::String& fileName){
-        texture = atlas.addTexture(FileManager::readTextureFile(FileManager::assetFolder.getChildFile(fileName)));
+
+        //create the wCube model
+        constexpr float cubeHalfWidth = 1.0f;
+        constexpr float cubeWidth = cubeHalfWidth*2.0f;
+        size_t i=0;
+        Vertex points[8];
+        for(float x=-cubeHalfWidth;x<=cubeHalfWidth;x+=cubeWidth){
+            for(float y=-cubeHalfWidth;y<=cubeHalfWidth;y+=cubeWidth){
+                for(float z=-cubeHalfWidth;z<=cubeHalfWidth;z+=cubeWidth){
+                    Vertex& vertex = points[i];
+                    vertex.xyz(x,y,z);
+                    vertex.nxyz(1.0f);                    
+                    vertex.rgba(1.0f);
+                    vertex.uv(0.5f);
+                    i++;
+                    std::cout<<Vec3f(x,y,z).toString()<<"\n";
+                }   
+            }    
+            //z pattern:    -+-+-+-+
+            //y pattern:    --++--++
+            //x patern:     ----++++
+        }
+        std::vector<Vertex> vertices;
+        vertices.reserve(12*2); //edge countof a cube times 2
+        //maybe use an index buffer later for some objects such as this
+        //connect them:
+        //x
+        for(size_t i = 0;i<4;i++){
+            Vertex& A = points[i];
+            Vertex& B = points[i+4];
+            vertices.push_back(A);
+            vertices.push_back(B);
+        }
+        //y
+        for(size_t i = 0;i<8;i++){
+            if((i%4)>=2) continue;
+            Vertex& A = points[i];
+            Vertex& B = points[i+2];
+            vertices.push_back(A);
+            vertices.push_back(B);
+        }
+        //z
+        for(size_t i = 0;i<8;i+=2){
+            Vertex& A = points[i];
+            Vertex& B = points[i+1];
+            vertices.push_back(A);
+            vertices.push_back(B);
+        }
+
+        wCube.createGeometry(Engine::renderer->openGLContext,vertices);
     }
     void loadTextures(TextureManager& atlas){
         loadTexture(atlas,tRack,"rack.png");

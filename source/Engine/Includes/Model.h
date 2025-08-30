@@ -7,8 +7,8 @@
 #include "Vertex.h"
 #include <vector>
 
-class Model {
-public:
+class RenderableObject{
+    public:
     // OpenGL buffer and vertex count
     GLuint vbo = 0;
     GLsizei vertexCount = 0;
@@ -18,8 +18,8 @@ public:
     bool hasGroupBuffer = false;
     juce::OpenGLContext* context;
 
-    Model(){}
-    ~Model() {
+    RenderableObject(){}
+    ~RenderableObject() {
         if(!context) return;
         auto& gl =  context->extensions;
         if (vbo != 0) gl.glDeleteBuffers(1, &vbo);
@@ -50,5 +50,20 @@ public:
         }
     }
 
+    unsigned int drawType = 0;
+};
+
+class Model : public RenderableObject{
+public:
     int textureID = 0;
+        Model() {
+            drawType = juce::gl::GL_TRIANGLES;
+        }
+};
+
+class Wireframe : public RenderableObject{
+    public:
+        Wireframe() {
+            drawType = juce::gl::GL_LINES;
+        }
 };

@@ -14,6 +14,8 @@ class Engine{
         static std::vector<PhysicsObject*> physicsObjects;
         static std::vector<OBJ_Comp_Socket*> sockets;
 
+        static size_t nextTickedPhysicsObject;
+
         static void calculateDeltaTime();
 
         //rendering
@@ -26,13 +28,22 @@ class Engine{
 
         //physics
         //runs every frame and tries to tick physics 60 times a second
-        static inline constexpr float physicsDelta=1.0f/60.0f;
+        static inline constexpr int physicsTicksPerSecond=30;
+        static inline constexpr float physicsDelta=1.0f/float(physicsTicksPerSecond);
         static double physicsAccumulator;
         static void runPhysics();
-        static void physicsTick();
         static double previousSeconds;
         //Engine deltatime
-        static double deltaTime;
+        static double deltaTime; //in seconds
         static inline const Vec3f GRAVITY={0.0f,-98.0f,0.0f};
         static Vec2f mousePosition;
+
+        template<typename T>
+        static T& createObject();
 };
+
+template <typename T>
+inline T& Engine::createObject()
+{
+    return static_cast<T&>(*objects.emplace_back(std::make_unique<T>()));
+}

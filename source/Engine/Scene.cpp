@@ -18,19 +18,6 @@ float Scene::panAcceleartion=0.01f;
 
 Vec2f Scene::mousePos;
 
-//functions
-// void Scene::addModuleFromData(const ModuleData &data)
-// {
-//     ModuleInstance& instance = instances.emplace_back();
-//     instance.moduleData=&data;
-//     instance.init();
-// }
-// void Scene::draw(Renderer& renderer){
-//     for(ModuleInstance& instance : instances){
-//         instance.draw(renderer);
-//     }
-// }
-
 //runs every frame before drawing
 void Scene::applyCameraSettings(Renderer& renderer){
     Vec3f cameraPos;
