@@ -27,8 +27,7 @@ class Engine{
         static Vec3f screenPosToZPlane(Vec2f screenPos,float zValue);
 
         //physics
-        //runs every frame and tries to tick physics 60 times a second
-        static inline constexpr int physicsTicksPerSecond=30;
+        static inline constexpr int physicsTicksPerSecond=60;
         static inline constexpr float physicsDelta=1.0f/float(physicsTicksPerSecond);
         static double physicsAccumulator;
         static void runPhysics();
@@ -40,6 +39,8 @@ class Engine{
 
         template<typename T>
         static T& createObject();
+
+        static void updateDeletedObjects(); //goes through innactive objects and deletes them
 };
 
 template <typename T>

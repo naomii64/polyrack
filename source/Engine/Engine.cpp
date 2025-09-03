@@ -76,3 +76,9 @@ Vec3f Engine::screenPosToZPlane(Vec2f screenPos,float zValue)
 
         return ray.origin+targetPosition;
 }
+void Engine::updateDeletedObjects(){
+    sockets.erase(
+    std::remove_if(sockets.begin(), sockets.end(),
+                   [](OBJ_Comp_Socket* socket) { return socket->deleted; }),
+    sockets.end());
+}

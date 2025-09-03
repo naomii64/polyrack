@@ -25,7 +25,7 @@ class Object{
 
         virtual void deleteObj();
 
-        bool active=true;/*if an object is active, if it isnt it can be replaced by another object*/
+        bool deleted=false;/*flags objects for deletion so they can be deleted in bulk*/
         //drawing
         //draws the object as well as all its children
         void callDraw();

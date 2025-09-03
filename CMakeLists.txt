@@ -86,6 +86,8 @@ target_sources(Polyrack
         source/Files/FileManager.cpp
         #object
         source/Engine/Objects/Object.cpp
+        source/Engine/Objects/Cable.cpp
+        source/Engine/Objects/Module.cpp
 )
 
 # `target_compile_definitions` adds some preprocessor definitions to our target. In a Projucer

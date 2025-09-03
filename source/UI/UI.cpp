@@ -342,6 +342,7 @@ void UI::initContextMenus(){
         module.deleteObj();
         UI::closeContextMenu(UI::contextMenus::modules);
         UI::currentModuleContext=nullptr;
+        Engine::updateDeletedObjects();
     };
 
     moduleContextMenu.visible = false;
